@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2b6e8f">
+<title>TOEIC 600</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>TOEIC 600</h1>
+  <button class="gear-btn" id="settings-btn" aria-label="設定">⚙️</button>
+</header>
+
+<main id="main">
+
+  <!-- ホームタブ -->
+  <section id="tab-home" class="tab-page">
+    <div class="card countdown-card">
+      <p class="countdown-label">試験まで</p>
+      <p class="countdown-days"><span id="countdown-num">--</span><span class="countdown-unit">日</span></p>
+      <p class="countdown-date" id="countdown-date"></p>
+    </div>
+
+    <div class="card level-card">
+      <div class="level-row">
+        <span class="level-badge">Lv.<span id="level-num">1</span></span>
+        <span class="level-title" id="level-title"></span>
+        <span class="level-xp" id="level-xp"></span>
+      </div>
+      <div class="level-row">
+        <div class="level-bar"><div class="level-bar-fill" id="level-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">今日のノルマ</h2>
+      <div class="goal-row">
+        <span class="goal-name">📚 単語</span>
+        <div class="goal-bar"><div class="goal-bar-fill" id="goal-bar-words"></div></div>
+        <span class="goal-count" id="goal-count-words"></span>
+      </div>
+      <div class="goal-row">
+        <span class="goal-name">✍️ 文法</span>
+        <div class="goal-bar"><div class="goal-bar-fill" id="goal-bar-quiz"></div></div>
+        <span class="goal-count" id="goal-count-quiz"></span>
+      </div>
+      <div class="goal-row">
+        <span class="goal-name">🎧 聞く</span>
+        <div class="goal-bar"><div class="goal-bar-fill" id="goal-bar-listen"></div></div>
+        <span class="goal-count" id="goal-count-listen"></span>
+      </div>
+      <p class="goal-message" id="goal-message"></p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">🏅 デイリーチャレンジ</h2>
+      <div id="daily-list"></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="card stat-card">
+        <p class="stat-num" id="stat-streak">0</p>
+        <p class="stat-label">連続学習日</p>
+      </div>
+      <div class="card stat-card">
+        <p class="stat-num" id="stat-mastered">0</p>
+        <p class="stat-label">習得した単語</p>
+      </div>
+    </div>
+
+    <button class="big-btn" data-goto="words">📚 単語学習をはじめる</button>
+    <button class="big-btn secondary" data-goto="quiz">✍️ 文法クイズをはじめる</button>
+    <button class="big-btn secondary" data-goto="listen">🎧 リスニングをはじめる</button>
+  </section>
+
+  <!-- 単語タブ -->
+  <section id="tab-words" class="tab-page hidden">
+    <!-- 開始画面 -->
+    <div id="words-start">
+      <div class="card">
+        <h2 class="card-title">今日の単語</h2>
+        <p class="words-summary" id="words-summary"></p>
+        <div class="retention-bar" id="words-retention-bar">
+          <div class="ret-seg ret-mature"></div>
+          <div class="ret-seg ret-young"></div>
+          <div class="ret-seg ret-learning"></div>
+          <div class="ret-seg ret-new"></div>
+        </div>
+        <p class="coverage-text" id="words-retention-text"></p>
+        <button class="big-btn" id="words-start-btn">学習をはじめる</button>
+      </div>
+      <p class="hint">カードをタップすると意味が見られます。<br>「覚えた」を選ぶと復習間隔が延び、「まだ」を選ぶと近いうちにまた出題されます。</p>
+    </div>
+
+    <!-- 学習画面 -->
+    <div id="words-session" class="hidden">
+      <p class="session-progress" id="words-progress"></p>
+      <div class="flashcard" id="flashcard">
+        <div class="flashcard-front" id="flashcard-front">
+          <p class="fc-word" id="fc-word"></p>
+          <p class="fc-ipa" id="fc-ipa"></p>
+          <p class="fc-pos" id="fc-pos"></p>
+          <button class="word-speak-btn" id="fc-speak" aria-label="発音を聞く">🔊</button>
+          <p class="fc-tap-hint">タップして意味を見る</p>
+        </div>
+        <div class="flashcard-back hidden" id="flashcard-back">
+          <p class="fc-word small" id="fc-word-back"></p>
+          <p class="fc-ipa" id="fc-ipa-back"></p>
+          <button class="word-speak-btn" id="fc-speak-back" aria-label="発音を聞く">🔊</button>
+          <p class="fc-meaning" id="fc-meaning"></p>
+          <p class="fc-example" id="fc-example"></p>
+          <button class="word-speak-btn example" id="fc-speak-example">🔊 例文を聞く</button>
+        </div>
+      </div>
+      <div class="fc-actions hidden" id="fc-actions">
+        <button class="fc-btn ng" id="fc-ng-btn">まだ 🤔</button>
+        <button class="fc-btn ok" id="fc-ok-btn">覚えた 👍</button>
+      </div>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="words-result" class="hidden">
+      <div class="card result-card">
+        <p class="result-emoji">🎉</p>
+        <h2 class="card-title">おつかれさま!</h2>
+        <p class="result-text" id="words-result-text"></p>
+        <button class="big-btn" id="words-again-btn">もう1セット</button>
+        <button class="big-btn secondary" data-goto="home">ホームへ戻る</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 文法タブ -->
+  <section id="tab-quiz" class="tab-page hidden">
+    <!-- 開始画面 -->
+    <div id="quiz-start">
+      <div class="card">
+        <h2 class="card-title">Part 5 形式クイズ</h2>
+        <p class="words-summary" id="quiz-summary"></p>
+        <div class="retention-bar" id="quiz-retention-bar">
+          <div class="ret-seg ret-mature"></div>
+          <div class="ret-seg ret-young"></div>
+          <div class="ret-seg ret-learning"></div>
+          <div class="ret-seg ret-new"></div>
+        </div>
+        <p class="coverage-text" id="quiz-retention-text"></p>
+        <button class="big-btn" id="quiz-start-btn">クイズをはじめる</button>
+        <button class="big-btn secondary" id="quiz-ta-btn">⏱️ タイムアタック(1問20秒)</button>
+      </div>
+      <p class="hint">600点への近道はPart 5の文法問題。<br>1問20秒以内を目安に解いてみましょう。</p>
+    </div>
+
+    <!-- 出題画面 -->
+    <div id="quiz-session" class="hidden">
+      <p class="session-progress" id="quiz-progress"></p>
+      <div class="ta-timer hidden" id="ta-timer"><div class="ta-timer-fill" id="ta-timer-fill"></div></div>
+      <div class="card quiz-card">
+        <p class="quiz-type" id="quiz-type"></p>
+        <p class="quiz-question" id="quiz-question"></p>
+        <div class="quiz-choices" id="quiz-choices"></div>
+        <div class="quiz-feedback hidden" id="quiz-feedback">
+          <p class="quiz-verdict" id="quiz-verdict"></p>
+          <p class="quiz-explanation" id="quiz-explanation"></p>
+          <button class="big-btn" id="quiz-next-btn">次の問題へ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="quiz-result" class="hidden">
+      <div class="card result-card">
+        <p class="result-emoji" id="quiz-result-emoji">🎉</p>
+        <h2 class="card-title" id="quiz-result-title"></h2>
+        <p class="result-text" id="quiz-result-text"></p>
+        <button class="big-btn" id="quiz-again-btn">もう1セット</button>
+        <button class="big-btn secondary" data-goto="home">ホームへ戻る</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- リスニングタブ -->
+  <section id="tab-listen" class="tab-page hidden">
+    <!-- 開始画面 -->
+    <div id="listen-start">
+      <p class="listen-warn hidden" id="listen-warn">⚠️ この端末では音声再生が使えないため、英文を読んで解く形式になります。</p>
+      <div class="card">
+        <h2 class="card-title">Part 1 写真描写</h2>
+        <p class="words-summary" id="part1-summary"></p>
+        <div class="retention-bar" id="part1-retention-bar">
+          <div class="ret-seg ret-mature"></div>
+          <div class="ret-seg ret-young"></div>
+          <div class="ret-seg ret-learning"></div>
+          <div class="ret-seg ret-new"></div>
+        </div>
+        <button class="big-btn" id="part1-start-btn">Part 1 をはじめる(1セット6問)</button>
+      </div>
+      <div class="card">
+        <h2 class="card-title">Part 2 応答問題</h2>
+        <p class="words-summary" id="part2-summary"></p>
+        <div class="retention-bar" id="part2-retention-bar">
+          <div class="ret-seg ret-mature"></div>
+          <div class="ret-seg ret-young"></div>
+          <div class="ret-seg ret-learning"></div>
+          <div class="ret-seg ret-new"></div>
+        </div>
+        <button class="big-btn" id="listen-start-btn">Part 2 をはじめる(1セット10問)</button>
+      </div>
+      <p class="hint">本番と同じく英文は画面に表示されません。<br>聞き取れなかったら 🔊 でもう一度聞けます。<br>音が出ない場合は端末のマナーモードを確認してください。</p>
+    </div>
+
+    <!-- 出題画面 -->
+    <div id="listen-session" class="hidden">
+      <p class="session-progress" id="listen-progress"></p>
+      <div class="card">
+        <div class="listen-photo hidden" id="listen-photo"></div>
+        <button class="replay-btn" id="listen-play-btn">🔊 もう一度聞く</button>
+        <div class="listen-choices" id="listen-choices"></div>
+        <div class="quiz-feedback hidden" id="listen-feedback">
+          <p class="quiz-verdict" id="listen-verdict"></p>
+          <p class="quiz-type" id="listen-type"></p>
+          <div class="listen-script" id="listen-script"></div>
+          <p class="quiz-explanation" id="listen-explanation"></p>
+          <button class="big-btn" id="listen-next-btn">次の問題へ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="listen-result" class="hidden">
+      <div class="card result-card">
+        <p class="result-emoji" id="listen-result-emoji">🎉</p>
+        <h2 class="card-title" id="listen-result-title"></h2>
+        <p class="result-text" id="listen-result-text"></p>
+        <button class="big-btn" id="listen-again-btn">もう1セット</button>
+        <button class="big-btn secondary" data-goto="home">ホームへ戻る</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 記録タブ -->
+  <section id="tab-stats" class="tab-page hidden">
+    <div class="card">
+      <h2 class="card-title">この2週間の学習量</h2>
+      <div class="chart" id="chart"></div>
+      <p class="chart-legend"><span class="legend-words">■</span> 単語　<span class="legend-quiz">■</span> 文法　<span class="legend-listen">■</span> 聞く</p>
+    </div>
+    <div class="card">
+      <h2 class="card-title">単語の定着度(忘却曲線)</h2>
+      <div class="retention-bar" id="retention-bar">
+        <div class="ret-seg ret-mature"></div>
+        <div class="ret-seg ret-young"></div>
+        <div class="ret-seg ret-learning"></div>
+        <div class="ret-seg ret-new"></div>
+      </div>
+      <div class="retention-legend" id="retention-legend"></div>
+      <h3 class="sub-title">今後7日間の復習予定</h3>
+      <div class="forecast-chart" id="forecast-chart"></div>
+      <p class="hint-small">「覚えた」を選ぶたびに復習間隔が 1日 → 3日 → 7日 → 14日 と延びます(忘却曲線に合わせた間隔反復)。14日間隔まで到達した単語が「習得済み」です。</p>
+    </div>
+    <div class="card">
+      <h2 class="card-title">文法クイズの定着度(忘却曲線)</h2>
+      <p class="accuracy-total" id="accuracy-total"></p>
+      <div class="retention-bar" id="stats-quiz-retention-bar">
+        <div class="ret-seg ret-mature"></div>
+        <div class="ret-seg ret-young"></div>
+        <div class="ret-seg ret-learning"></div>
+        <div class="ret-seg ret-new"></div>
+      </div>
+      <p class="coverage-text" id="stats-quiz-retention-text"></p>
+      <div id="accuracy-list"></div>
+      <h3 class="sub-title">今後7日間の復習予定</h3>
+      <div class="forecast-chart" id="quiz-forecast-chart"></div>
+      <p class="hint-small">正解すると次の出題が 1日 → 3日 → 7日 → 14日 後ろへ延び、間違えるとリセットされます(単語と同じ間隔反復)。</p>
+    </div>
+    <div class="card">
+      <h2 class="card-title">リスニングの定着度(忘却曲線)</h2>
+      <p class="accuracy-total" id="accuracy-listen-total"></p>
+      <div class="retention-bar" id="stats-listen-retention-bar">
+        <div class="ret-seg ret-mature"></div>
+        <div class="ret-seg ret-young"></div>
+        <div class="ret-seg ret-learning"></div>
+        <div class="ret-seg ret-new"></div>
+      </div>
+      <p class="coverage-text" id="stats-listen-retention-text"></p>
+      <div id="accuracy-listen-list"></div>
+      <h3 class="sub-title">今後7日間の復習予定</h3>
+      <div class="forecast-chart" id="listen-forecast-chart"></div>
+      <p class="hint-small">正解すると次の出題が 1日 → 3日 → 7日 → 14日 後ろへ延び、間違えるとリセットされます(単語・文法と同じ間隔反復)。</p>
+    </div>
+    <div class="card">
+      <h2 class="card-title">🎖️ 実績</h2>
+      <div class="badge-grid" id="badge-grid"></div>
+    </div>
+    <div class="card">
+      <h2 class="card-title">苦手な単語</h2>
+      <p class="hint-small">「まだ」が続いている単語です。すき間時間に見直しましょう。</p>
+      <div id="weak-words"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- 設定ダイアログ -->
+<dialog id="settings-dialog">
+  <form method="dialog">
+    <h2>設定</h2>
+    <label>試験日
+      <input type="date" id="exam-date-input">
+    </label>
+    <label>1日の単語ノルマ(枚)
+      <input type="number" id="goal-words-input" min="5" max="100" step="5">
+    </label>
+    <label>1日の文法ノルマ(問)
+      <input type="number" id="goal-quiz-input" min="5" max="50" step="5">
+    </label>
+    <label>1日のリスニングノルマ(問)
+      <input type="number" id="goal-listen-input" min="5" max="50" step="5">
+    </label>
+    <label class="check-row">
+      <input type="checkbox" id="sound-input">
+      <span>効果音を鳴らす(正解・完了時)</span>
+    </label>
+    <label class="check-row">
+      <input type="checkbox" id="autospeak-input">
+      <span>単語カードを自動で読み上げる</span>
+    </label>
+    <div class="dialog-actions">
+      <button type="button" class="danger-btn" id="reset-btn">学習記録をリセット</button>
+      <span class="spacer"></span>
+      <button type="submit" class="primary-btn" id="settings-save-btn">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="home"><span class="tab-icon">🏠</span><span>ホーム</span></button>
+  <button class="tab-btn" data-tab="words"><span class="tab-icon">📚</span><span>単語</span></button>
+  <button class="tab-btn" data-tab="quiz"><span class="tab-icon">✍️</span><span>文法</span></button>
+  <button class="tab-btn" data-tab="listen"><span class="tab-icon">🎧</span><span>聞く</span></button>
+  <button class="tab-btn" data-tab="stats"><span class="tab-icon">📊</span><span>記録</span></button>
+</nav>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

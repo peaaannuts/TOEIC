@@ -1,0 +1,92 @@
+# TOEIC 600 学習アプリ — 引き継ぎメモ
+
+TOEIC L&R 600点を1ヶ月で目指す、サーバー不要のPWA(単語・文法・リスニング・ゲーミフィケーション)。
+別チャットでの続き作業用に、現状の構成と設計判断をまとめておく。
+
+## 起動方法
+
+このフォルダ(`C:\Users\japan\Desktop\toeic`)で `npx serve .` するか、`index.html` を直接開く。
+プレビュー用の launch 設定は **家事分担アプリ側**の `C:\Users\japan\Desktop\家事分担\.claude\launch.json` に
+`"toeic-app"` という名前で登録済み(このプロジェクト自体はgit管理なし、独立フォルダ)。
+
+## ファイル構成
+
+| ファイル | 役割 |
+|---|---|
+| `index.html` | 画面構造(5タブ: ホーム/単語/文法/聞く/記録 + 設定ダイアログ) |
+| `style.css` | デザイン(モバイルファースト、CSS変数でテーマ管理) |
+| `data.js` | 単語(WORDS)・発音記号(IPA)・文法問題(QUESTIONS)・Part1(PART1)・Part2(PART2)の全データ |
+| `app.js` | ロジック全部(状態管理・出題・採点・演出・音声・ゲーミフィケーション) |
+| `manifest.webmanifest` / `icon.svg` / `sw.js` | PWA対応 |
+| `README.md` | ユーザー向け説明 |
+
+## データ規模(2026-07-16時点)
+
+- 単語: WORDS 212語(+発音記号IPA辞書が同数)
+- 文法(Part 5形式): QUESTIONS 200問
+- リスニング Part 1(写真描写): PART1 16問(イラストはSVGをdata.js内にインラインで直書き)
+- リスニング Part 2(応答問題): PART2 60問
+
+## 核となる設計: 忘却曲線ベースの間隔反復(SRS)
+
+単語・文法・リスニング(Part1/Part2)**全セクション共通**で同じ方式:
+
+- `INTERVALS = [0, 1, 3, 7, 14]`(日)。正解のたびにレベルが上がり次回出題が延びる。不正解でレベル0に戻る。
+- 各問題の記録は `{ lv, next(YYYY-MM-DD), seen, ok }` の形で `state.words` / `state.quizStats` /
+  `state.listenStats`(Part2) / `state.part1Stats` に保存。
+- 出題キュー生成(`buildWordQueue` / `buildQuizQueue` / `buildListenQueue`)は共通ロジック:
+  「復習期日が来た問題(レベル低い順)→ 未出題 → (それでも足りなければ)復習予定を前倒し」で1セット分を組む。
+- `loadState()` 内で **旧形式(lv/nextなし)の記録を自動移行**する処理がある。今後スキーマを変える時も
+  ここに移行コードを足す運用。
+- 定着度表示(Anki風 Mature/Young/Learning/New)は `srsRetentionCounts()` / `renderRetentionBar()` /
+  `renderForecast()`(今後7日間の復習予定グラフ)で共通化されている。記録タブとセクション開始画面の両方に出す。
+
+## ゲーミフィケーション層
+
+- **XP&レベル**: `state.xp` に加算、`levelInfo(xp)` でレベル算出(Lv1→2は100XP、以降+50ずつ)。
+  `addXp(n)` を呼ぶとレベルアップ判定も自動で行われる。
+- **称号**: `TITLES` 配列でレベル閾値ごとに称号("みならい"→"600点スレイヤー"等)。`titleForLevel()`。
+- **コンボ&ピッチ変化**: 連続正解で `seCorrect(combo)` の音のピッチが半音ずつ上がる(最大7半音)。
+  3連続以上でXPが1.5倍。
+- **実績バッジ**: `BADGES` 配列(14種)、`checkBadges()` が学習アクションのたびに判定。
+  解除時は紙吹雪+バナー+ボーナス50XP。`aggregates()` が累計データ集計。
+- **デイリーチャレンジ**: `DAILY_POOL`(8種)から日付シードで毎日3つ決定的に選出(`dailyChallenges()`)。
+  達成で `checkDailyChallenges()` がボーナスXP+バナー。
+- **タイムアタックモード**: 文法クイズのみ、1問20秒(`TA_SECONDS`)。時間切れは不正解扱い、
+  速答でスピードボーナス+5XP。
+- **効果音**: Web Audio APIでその場合成(音声ファイル不要)。`popNote()` がDuolingo風「ポピンッ」の
+  正解音を作る基礎関数。設定でON/OFF可(`state.settings.sound`)。
+- **紙吹雪・バナー演出**: `confetti()` / `showBanner()`。バナーは複数同時発生時に縦に並ぶ。
+
+## 音声(TTS)
+
+`speechSynthesis`(ブラウザ内蔵、無料・オフライン)を使用。音声ファイルは一切使っていない。
+
+- リスニング(Part1/Part2)の質問・選択肢読み上げ: `playListenAudio()`
+- 単語カードの自動読み上げ+🔊ボタン: `speakWord()`(設定 `autoSpeak` でON/OFF)
+- iOS Safari対策として、各モード開始ボタンの直下で空発話を1回鳴らして音声をアンロックしている
+  (`audioStarted` フラグで、リスニング未使用ならTTSに一切触れないようにもしてある)
+
+## プレビュー検証で踏んだ地雷(次回も起きうる)
+
+- **Service Workerキャッシュ**: `data.js`/`app.js` を編集したら `sw.js` の `CACHE_NAME` を必ずインクリメント
+  (現在 `toeic600-v17`)。プレビューで検証する際は `navigator.serviceWorker.getRegistrations()` から
+  `update()` を呼んで反映を待つ必要がある(でないと古いコードのまま)。
+- **プレビューのscreenshotツールがしばしばタイムアウトする**(このセッション中に複数回発生)。
+  そのときは `preview_inspect` / `javascript_tool` でDOM状態や算出スタイルを直接検査する方が確実。
+- 音声合成をテストする時は `window.speechSynthesis.speak` をスタブ化してテストしないと、
+  ヘッドレス環境で発話が終わらずセッションが進まないことがある。
+
+## まだやっていない / 声が出れば良さそうな拡張案
+
+- 実績バッジ・デイリーチャレンジの一覧は記録タブに表示済みだが、通知(ScheduleWakeup的な仕組み)は未実装
+- スマホでの実機確認はしていない(プレビューブラウザでのみ検証)。ユーザーには毎回
+  「フォルダ再アップロード→アプリを2回開く」で反映されると案内している(Netlify Drop想定)
+- ユーザーの試験日は設定で自由に変えられる(デフォルトは翌月第1日曜)
+
+## ユーザーとのやりとりの傾向
+
+- 機能追加は「〜できる?」という一言リクエストが多い。都度、設計方針を1〜2行で示してから実装に入っている。
+- 実装のたびにプレビューブラウザで動作検証してから完了報告する運用が定着している(スクショが撮れない時は
+  DOM検査で代替)。
+- キャッシュバージョンの更新とREADME.mdの追記は機能追加のたびに必ず行っている。
