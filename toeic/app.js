@@ -531,10 +531,11 @@ function buildWordQueue() {
   // 復習(レベルが低い順)を優先し、残りを新しい単語で埋める
   due.sort((a, b) => (state.words[a].lv - state.words[b].lv));
   const size = state.settings.goalWords;
-  const queue = due.slice(0, size);
-  while (queue.length < size && fresh.length > 0) {
-    queue.push(fresh.shift());
-  }
+  // 復習が多い日が続いても新しい単語が永遠に出なくならないよう、毎回一定数は新出枠として確保する
+  const newSlots = Math.min(fresh.length, Math.max(1, Math.round(size * 0.3)));
+  const queue = fresh.splice(0, newSlots);
+  while (queue.length < size && due.length > 0) queue.push(due.shift());
+  while (queue.length < size && fresh.length > 0) queue.push(fresh.shift());
   return queue;
 }
 
@@ -805,7 +806,10 @@ function buildQuizQueue() {
   });
   due.sort((a, b) => state.quizStats[a].lv - state.quizStats[b].lv);
   shuffleArray(fresh);
-  const queue = due.slice(0, QUIZ_SET_SIZE);
+  // 復習が多い日が続いても新しい問題が永遠に出なくならないよう、毎回一定数は新出枠として確保する
+  const newSlots = Math.min(fresh.length, Math.max(1, Math.round(QUIZ_SET_SIZE * 0.3)));
+  const queue = fresh.splice(0, newSlots);
+  while (queue.length < QUIZ_SET_SIZE && due.length > 0) queue.push(due.shift());
   while (queue.length < QUIZ_SET_SIZE && fresh.length > 0) queue.push(fresh.shift());
   if (queue.length < QUIZ_SET_SIZE) {
     future.sort((a, b) => (state.quizStats[a].next < state.quizStats[b].next ? -1 : 1));
@@ -1078,7 +1082,10 @@ function buildListenQueue() {
   });
   due.sort((a, b) => stats[a].lv - stats[b].lv);
   shuffleArray(fresh);
-  const queue = due.slice(0, size);
+  // 復習が多い日が続いても新しい問題が永遠に出なくならないよう、毎回一定数は新出枠として確保する
+  const newSlots = Math.min(fresh.length, Math.max(1, Math.round(size * 0.3)));
+  const queue = fresh.splice(0, newSlots);
+  while (queue.length < size && due.length > 0) queue.push(due.shift());
   while (queue.length < size && fresh.length > 0) queue.push(fresh.shift());
   if (queue.length < size) {
     future.sort((a, b) => (stats[a].next < stats[b].next ? -1 : 1));
