@@ -934,6 +934,16 @@ function answerQuestion(chosen, btn, timedOut) {
     ? `正解! ⭕ +${gained}XP${speedBonus ? " ⚡" : ""}${quizCombo >= 2 ? ` 🔥${quizCombo}連続!` : ""}`
     : timedOut ? "時間切れ… ⏱️ +2XP" : "残念… ❌ +2XP";
   verdict.className = `quiz-verdict ${correct ? "good" : "bad"}`;
+
+  const script = document.getElementById("quiz-script");
+  script.innerHTML = "";
+  if (q.jq) {
+    const filled = q.q.replace("-------", q.c[q.a]);
+    const qLine = document.createElement("p");
+    qLine.className = "script-q";
+    qLine.innerHTML = `<strong>${filled}</strong><br><span>${q.jq}</span>`;
+    script.appendChild(qLine);
+  }
   document.getElementById("quiz-explanation").textContent = q.x;
   const nextBtn = document.getElementById("quiz-next-btn");
   nextBtn.textContent = quizPos + 1 < quizQueue.length ? "次の問題へ" : "結果を見る";
