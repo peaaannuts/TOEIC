@@ -54,6 +54,11 @@
         <div class="goal-bar"><div class="goal-bar-fill" id="goal-bar-listen"></div></div>
         <span class="goal-count" id="goal-count-listen"></span>
       </div>
+      <div class="goal-row">
+        <span class="goal-name">📖 読解</span>
+        <div class="goal-bar"><div class="goal-bar-fill" id="goal-bar-read"></div></div>
+        <span class="goal-count" id="goal-count-read"></span>
+      </div>
       <p class="goal-message" id="goal-message"></p>
     </div>
 
@@ -76,6 +81,7 @@
     <button class="big-btn" data-goto="words">📚 単語学習をはじめる</button>
     <button class="big-btn secondary" data-goto="quiz">✍️ 文法クイズをはじめる</button>
     <button class="big-btn secondary" data-goto="listen">🎧 リスニングをはじめる</button>
+    <button class="big-btn secondary" data-goto="read">📖 読解をはじめる</button>
   </section>
 
   <!-- 単語タブ -->
@@ -243,12 +249,63 @@
     </div>
   </section>
 
+  <!-- 読解タブ (Part 7) -->
+  <section id="tab-read" class="tab-page hidden">
+    <!-- 開始画面 -->
+    <div id="read-start">
+      <div class="card">
+        <h2 class="card-title">Part 7 読解</h2>
+        <p class="words-summary" id="read-summary"></p>
+        <div class="retention-bar" id="read-retention-bar">
+          <div class="ret-seg ret-mature"></div>
+          <div class="ret-seg ret-young"></div>
+          <div class="ret-seg ret-learning"></div>
+          <div class="ret-seg ret-new"></div>
+        </div>
+        <p class="coverage-text" id="read-retention-text"></p>
+        <button class="big-btn" id="read-start-btn">読解をはじめる</button>
+      </div>
+      <p class="hint">本番Part 7と同じ、Eメール・お知らせ・記事などを読んで設問に答えます。<br>タイマーで「読むスピード」を意識しましょう。1分あたりの解答数が本番の時間配分の目安になります。</p>
+    </div>
+
+    <!-- 出題画面 -->
+    <div id="read-session" class="hidden">
+      <div class="read-topbar">
+        <p class="session-progress" id="read-progress"></p>
+        <p class="read-timer" id="read-timer">⏱️ 0:00</p>
+      </div>
+      <div class="card read-passages" id="read-passages"></div>
+      <div class="card quiz-card">
+        <p class="quiz-type" id="read-qtype"></p>
+        <p class="quiz-question" id="read-question"></p>
+        <div class="quiz-choices" id="read-choices"></div>
+        <div class="quiz-feedback hidden" id="read-feedback">
+          <p class="quiz-verdict" id="read-verdict"></p>
+          <div class="listen-script" id="read-script"></div>
+          <p class="quiz-explanation" id="read-explanation"></p>
+          <button class="big-btn" id="read-next-btn">次の設問へ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="read-result" class="hidden">
+      <div class="card result-card">
+        <p class="result-emoji" id="read-result-emoji">🎉</p>
+        <h2 class="card-title" id="read-result-title"></h2>
+        <p class="result-text" id="read-result-text"></p>
+        <button class="big-btn" id="read-again-btn">もう1セット</button>
+        <button class="big-btn secondary" data-goto="home">ホームへ戻る</button>
+      </div>
+    </div>
+  </section>
+
   <!-- 記録タブ -->
   <section id="tab-stats" class="tab-page hidden">
     <div class="card">
       <h2 class="card-title">この2週間の学習量</h2>
       <div class="chart" id="chart"></div>
-      <p class="chart-legend"><span class="legend-words">■</span> 単語　<span class="legend-quiz">■</span> 文法　<span class="legend-listen">■</span> 聞く</p>
+      <p class="chart-legend"><span class="legend-words">■</span> 単語　<span class="legend-quiz">■</span> 文法　<span class="legend-listen">■</span> 聞く　<span class="legend-read">■</span> 読解</p>
     </div>
     <div class="card">
       <h2 class="card-title">単語の定着度(忘却曲線)</h2>
@@ -294,6 +351,21 @@
       <p class="hint-small">正解すると次の出題が 1日 → 3日 → 7日 → 14日 後ろへ延び、間違えるとリセットされます(単語・文法と同じ間隔反復)。</p>
     </div>
     <div class="card">
+      <h2 class="card-title">読解の定着度(忘却曲線)</h2>
+      <p class="accuracy-total" id="accuracy-read-total"></p>
+      <div class="retention-bar" id="stats-read-retention-bar">
+        <div class="ret-seg ret-mature"></div>
+        <div class="ret-seg ret-young"></div>
+        <div class="ret-seg ret-learning"></div>
+        <div class="ret-seg ret-new"></div>
+      </div>
+      <p class="coverage-text" id="stats-read-retention-text"></p>
+      <div id="accuracy-read-list"></div>
+      <h3 class="sub-title">今後7日間の復習予定</h3>
+      <div class="forecast-chart" id="read-forecast-chart"></div>
+      <p class="hint-small">1つの文書セットの設問に全問正解すると、次の出題が 1日 → 3日 → 7日 → 14日 後ろへ延びます(単語・文法と同じ間隔反復)。</p>
+    </div>
+    <div class="card">
       <h2 class="card-title">🎖️ 実績</h2>
       <div class="badge-grid" id="badge-grid"></div>
     </div>
@@ -322,6 +394,9 @@
     <label>1日のリスニングノルマ(問)
       <input type="number" id="goal-listen-input" min="5" max="50" step="5">
     </label>
+    <label>1日の読解ノルマ(問)
+      <input type="number" id="goal-read-input" min="2" max="40" step="2">
+    </label>
     <label class="check-row">
       <input type="checkbox" id="sound-input">
       <span>効果音を鳴らす(正解・完了時)</span>
@@ -343,6 +418,7 @@
   <button class="tab-btn" data-tab="words"><span class="tab-icon">📚</span><span>単語</span></button>
   <button class="tab-btn" data-tab="quiz"><span class="tab-icon">✍️</span><span>文法</span></button>
   <button class="tab-btn" data-tab="listen"><span class="tab-icon">🎧</span><span>聞く</span></button>
+  <button class="tab-btn" data-tab="read"><span class="tab-icon">📖</span><span>読解</span></button>
   <button class="tab-btn" data-tab="stats"><span class="tab-icon">📊</span><span>記録</span></button>
 </nav>
 

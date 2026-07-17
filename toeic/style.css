@@ -12,6 +12,7 @@
   --words-color: #2b6e8f;
   --quiz-color: #e8a13d;
   --listen-color: #2e9e6b;
+  --read-color: #7e57c2;
   --radius: 14px;
   --shadow: 0 1px 4px rgba(35, 52, 63, 0.10);
 }
@@ -151,6 +152,7 @@ html, body {
 }
 #goal-bar-quiz { background: var(--quiz-color); }
 #goal-bar-listen { background: var(--listen-color); }
+#goal-bar-read { background: var(--read-color); }
 .goal-count { width: 58px; text-align: right; font-size: 13px; color: var(--sub); flex-shrink: 0; }
 .goal-message { margin: 6px 0 0; font-size: 13px; text-align: center; color: var(--ok); font-weight: 700; }
 
@@ -573,6 +575,7 @@ html, body {
 .chart-seg-words { background: var(--words-color); border-radius: 3px 3px 0 0; }
 .chart-seg-quiz { background: var(--quiz-color); border-radius: 3px 3px 0 0; }
 .chart-seg-listen { background: var(--listen-color); border-radius: 3px 3px 0 0; }
+.chart-seg-read { background: var(--read-color); border-radius: 3px 3px 0 0; }
 .chart-day {
   font-size: 9px;
   color: var(--sub);
@@ -583,6 +586,37 @@ html, body {
 .legend-words { color: var(--words-color); }
 .legend-quiz { color: var(--quiz-color); }
 .legend-listen { color: var(--listen-color); }
+.legend-read { color: var(--read-color); }
+
+/* ---- 読解 (Part 7) ---- */
+.read-topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.read-timer {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--read-color);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.read-passages { max-height: 46vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.read-doc + .read-doc { margin-top: 14px; padding-top: 14px; border-top: 1px dashed #d3dde3; }
+.read-doc-label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--read-color);
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.read-doc-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  color: var(--text);
+}
 
 .accuracy-total { margin: 0 0 10px; font-size: 15px; font-weight: 700; }
 .acc-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }

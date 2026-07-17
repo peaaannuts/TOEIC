@@ -1091,3 +1091,118 @@ const PART1 = [
     jr: ["書類が机の上に置かれている。", "男性が書類に署名している。", "机が掃除されているところだ。", "書類が配られているところだ。"],
     x: "無人の机の写真。have been placed(置かれている状態)が正解。being+過去分詞や人物の動作は、人が写っていない写真では選べません。", t: "写真(モノ)" },
 ];
+
+// READING: Part 7形式読解(passages=文書1〜2つ, qs=設問。各設問 q/jq/c/a/x)
+// 各設問の c は先頭が正解ではなく a が正解index。表示時に選択肢順をシャッフルする。
+const READING = [
+  {
+    t: "Eメール",
+    passages: [
+      { label: "Eメール", text: "To: All Marketing Staff\nFrom: Rachel Nomura, Office Manager\nSubject: Meeting Room Change\nDate: June 3\n\nDear team,\n\nPlease note that the weekly marketing meeting scheduled for Thursday, June 5, has been moved from Conference Room B to Conference Room A on the fourth floor. Conference Room B will be unavailable that day because new video equipment is being installed.\n\nThe meeting time remains the same, starting at 10:00 A.M. As always, please bring a printed copy of your monthly report. If you are unable to attend, notify me by Wednesday afternoon so that I can arrange a substitute.\n\nThank you for your cooperation.\n\nRachel", jtext: "宛先: マーケティング部員各位\n差出人: レイチェル・ノムラ(オフィスマネージャー)\n件名: 会議室の変更\n日付: 6月3日\n\nチームの皆さん\n\n6月5日(木)に予定されている毎週のマーケティング会議が、4階の会議室Bから会議室Aへ変更になりましたのでご注意ください。その日は新しいビデオ機器が設置されるため、会議室Bは使用できません。\n\n会議時間は変わらず午前10時開始です。いつも通り、月次報告書を印刷して持参してください。出席できない場合は、代理を手配できるよう水曜の午後までにお知らせください。\n\nご協力に感謝します。\n\nレイチェル" },
+    ],
+    qs: [
+      { q: "Why has the meeting room been changed?", jq: "なぜ会議室が変更されたのですか?", c: ["Equipment is being installed in the original room.","The original room is too small.","More staff will attend than usual.","The fourth floor is being renovated."], a: 0, x: "本文に「new video equipment is being installed(新しいビデオ機器が設置される)」ため会議室Bが使えないと書かれています。" },
+      { q: "What are staff members asked to bring?", jq: "部員は何を持参するよう求められていますか?", c: ["A copy of their monthly report","A laptop computer","Their employee ID","A list of clients"], a: 0, x: "「bring a printed copy of your monthly report(月次報告書を印刷して持参)」とあります。" },
+    ],
+  },
+  {
+    t: "お知らせ",
+    passages: [
+      { label: "お知らせ", text: "NOTICE TO ALL RESIDENTS\n\nThe water supply in Greenfield Apartments will be temporarily shut off on Saturday, July 12, from 9:00 A.M. to 3:00 P.M. This is necessary to complete repairs on the main water pipe in the basement.\n\nWe recommend that residents store enough water for drinking and cooking before the work begins. The building management apologizes for any inconvenience. If the repairs are completed early, the water supply will be restored sooner, and a notice will be posted in the lobby.\n\nFor questions, please contact the management office at 555-0173.", jtext: "入居者の皆様へのお知らせ\n\nグリーンフィールド・アパートの給水は、7月12日(土)午前9時から午後3時まで一時的に停止されます。これは地下の主要な水道管の修理を完了するために必要です。\n\n作業開始前に、飲用・調理用の水を十分に蓄えておくことをお勧めします。建物管理者はご不便をお詫びいたします。修理が早く完了した場合は給水がより早く再開され、ロビーにお知らせが掲示されます。\n\nご質問は管理事務所(555-0173)までお問い合わせください。" },
+    ],
+    qs: [
+      { q: "What is the purpose of the notice?", jq: "このお知らせの目的は何ですか?", c: ["To inform residents about a water supply interruption","To announce a rent increase","To advertise a new apartment","To introduce a new manager"], a: 0, x: "給水が一時停止されることを入居者に知らせるのが目的です。" },
+      { q: "What are residents advised to do?", jq: "入居者は何をするよう勧められていますか?", c: ["Store water in advance","Leave the building","Pay a repair fee","Move to another floor"], a: 0, x: "「store enough water ... before the work begins(作業前に水を蓄えておく)」とあります。" },
+    ],
+  },
+  {
+    t: "広告",
+    passages: [
+      { label: "広告", text: "GRAND OPENING — Bayside Fitness Center!\n\nJoin us this September at our brand-new location on Harbor Street. To celebrate our opening, we are offering a special membership deal for the first 200 members.\n\n- No registration fee (save $50)\n- First month free\n- Free personal training session\n\nOur center features modern equipment, a heated swimming pool, and group classes led by certified instructors. Classes include yoga, cycling, and aerobics.\n\nStop by between September 1 and September 15 to take advantage of this offer. Bring this advertisement to receive an additional free water bottle. Visit www.baysidefitness.com for class schedules.", jtext: "グランドオープン — ベイサイド・フィットネスセンター!\n\n9月、ハーバー通りの新店舗に是非お越しください。開店を記念して、先着200名様に特別な会員特典をご用意しています。\n\n・登録料無料(50ドルお得)\n・初月無料\n・無料パーソナルトレーニング1回\n\n当センターには最新の設備、温水プール、資格を持つインストラクターによるグループクラスがあります。クラスにはヨガ、サイクリング、エアロビクスが含まれます。\n\nこの特典を利用するには9月1日から15日の間にお立ち寄りください。この広告をお持ちいただくと、追加で無料の水筒を差し上げます。クラスの予定はwww.baysidefitness.comをご覧ください。" },
+    ],
+    qs: [
+      { q: "What is being advertised?", jq: "何が宣伝されていますか?", c: ["The opening of a fitness center","A swimming competition","A yoga instructor course","A water bottle sale"], a: 0, x: "フィットネスセンターのグランドオープンの広告です。" },
+      { q: "How can a customer receive a free water bottle?", jq: "客はどうすれば無料の水筒をもらえますか?", c: ["By bringing the advertisement","By paying a registration fee","By joining a yoga class","By visiting the website"], a: 0, x: "「Bring this advertisement to receive an additional free water bottle(この広告を持参すると水筒がもらえる)」とあります。" },
+      { q: "What is NOT mentioned as a feature of the center?", jq: "センターの特徴として述べられていないものはどれですか?", c: ["A restaurant","A heated swimming pool","Modern equipment","Group classes"], a: 0, x: "レストランは本文に登場しません。温水プール・最新設備・グループクラスは記載があります。" },
+    ],
+  },
+  {
+    t: "テキストメッセージ",
+    passages: [
+      { label: "メッセージのやり取り", text: "Daniel Foster (8:42 A.M.): Hi Maria, are the samples for the trade show ready to be picked up?\n\nMaria Lopez (8:45 A.M.): Almost. The printing company just called. They'll deliver them to our office by 11.\n\nDaniel Foster (8:46 A.M.): That's cutting it close. The booth setup starts at noon.\n\nMaria Lopez (8:48 A.M.): I know. I'll ask them to send someone directly to the convention center instead. It's closer to them.\n\nDaniel Foster (8:49 A.M.): Good idea. Let me know once it's confirmed.\n\nMaria Lopez (8:52 A.M.): Confirmed. They'll arrive at the center by 10:30.", jtext: "ダニエル・フォスター(午前8:42): マリア、展示会用のサンプルは受け取れる状態になってる?\n\nマリア・ロペス(午前8:45): もうすぐ。印刷会社から今電話があって、11時までにうちのオフィスに届けてくれるって。\n\nダニエル・フォスター(午前8:46): ぎりぎりだね。ブース設営は正午に始まるのに。\n\nマリア・ロペス(午前8:48): そうなの。代わりに直接コンベンションセンターに人を送ってもらうよう頼んでみる。そっちの方が彼らに近いし。\n\nダニエル・フォスター(午前8:49): いい考えだ。確定したら教えて。\n\nマリア・ロペス(午前8:52): 確定した。10時半までにセンターに到着するって。" },
+    ],
+    qs: [
+      { q: "What are the writers mainly discussing?", jq: "書き手たちは主に何について話し合っていますか?", c: ["The delivery of trade show samples","The design of a new booth","A change in the show schedule","The cost of printing"], a: 0, x: "展示会用サンプルの配送について相談しています。" },
+      { q: "At 8:48 A.M., what does Ms. Lopez mean when she writes, \"It's closer to them\"?", jq: "午前8:48にロペスさんが「そっちの方が彼らに近い」と書いたのはどういう意味ですか?", c: ["The convention center is near the printing company.","The office is near the trade show.","The booth is near the entrance.","The samples are small."], a: 0, x: "印刷会社にとってコンベンションセンターの方が近いので、直接そこへ届けてもらうという流れです。" },
+    ],
+  },
+  {
+    t: "社内連絡",
+    passages: [
+      { label: "メモ", text: "MEMO\n\nTo: All Department Heads\nFrom: Kevin Park, IT Director\nRe: System Maintenance\n\nOur company's email system will undergo scheduled maintenance next Tuesday evening, from 8:00 P.M. to midnight. During this period, employees will not be able to send or receive emails.\n\nPlease inform your team members in advance so that they can plan their work accordingly. Any urgent messages should be sent before 7:30 P.M. that day. The system is expected to run faster after the upgrade.\n\nWe appreciate your understanding.", jtext: "メモ\n\n宛先: 各部門長\n差出人: ケビン・パーク(IT部長)\n件名: システムメンテナンス\n\n当社のメールシステムは来週火曜の夜8時から深夜0時まで、予定されたメンテナンスを行います。この間、従業員はメールの送受信ができません。\n\nチームメンバーが仕事を計画できるよう、事前に伝えてください。緊急のメッセージはその日の午後7時30分までに送信してください。アップグレード後はシステムがより速く動作する見込みです。\n\nご理解に感謝します。" },
+    ],
+    qs: [
+      { q: "What will happen next Tuesday evening?", jq: "来週火曜の夜に何が起きますか?", c: ["The email system will be unavailable.","A new office will open.","A meeting will be held.","Employees will receive new computers."], a: 0, x: "メンテナンス中はメールの送受信ができなくなります。" },
+      { q: "What are department heads asked to do?", jq: "部門長は何をするよう求められていますか?", c: ["Notify their team members","Turn off their computers","Work from home","Submit a report"], a: 0, x: "「inform your team members in advance(事前にチームに伝える)」とあります。" },
+    ],
+  },
+  {
+    t: "記事",
+    passages: [
+      { label: "記事", text: "Local Bakery Expands to Second Location\n\nRIVERTON — Sweet Corner Bakery, a popular shop known for its handmade breads and pastries, will open a second store downtown next month. Owner Emily Tran said the decision came after years of steady growth and strong customer demand.\n\n\"Our regular customers kept asking for a location closer to their offices,\" Tran explained. The new store, located on Main Street, will offer the same menu as the original shop, plus a small seating area for customers who wish to enjoy their coffee inside.\n\nThe original location on Oak Avenue opened five years ago and quickly became a neighborhood favorite. The downtown store is scheduled to open on August 20 and will hire about fifteen new employees.", jtext: "地元のパン屋が2店舗目を出店\n\nリバートン発 — 手作りのパンやペストリーで知られる人気店スイートコーナー・ベーカリーが、来月ダウンタウンに2店舗目を開く。オーナーのエミリー・トランさんは、着実な成長と強い顧客需要が続いた末の決断だと語った。\n\n「常連のお客様が、オフィスに近い店舗を求め続けていました」とトランさんは説明した。メインストリートにある新店舗は、元の店と同じメニューに加え、店内でコーヒーを楽しみたい客のための小さな座席スペースを設ける。\n\nオーク通りの元の店舗は5年前に開店し、すぐに地域で人気になった。ダウンタウンの店舗は8月20日開店予定で、約15人の新従業員を雇う。" },
+    ],
+    qs: [
+      { q: "What is the article mainly about?", jq: "記事は主に何についてですか?", c: ["A bakery opening a new store","A new recipe for bread","A change in bakery ownership","A cooking competition"], a: 0, x: "パン屋が2店舗目を開くことについての記事です。" },
+      { q: "According to Ms. Tran, why is the new store being opened?", jq: "トランさんによれば、なぜ新店舗が開かれるのですか?", c: ["Customers wanted a location near their offices.","The original store closed down.","Rent downtown was cheaper.","A competitor left the area."], a: 0, x: "常連客がオフィスに近い店舗を求めていたためです。" },
+      { q: "What is different about the new store?", jq: "新店舗について異なる点は何ですか?", c: ["It has a seating area.","It sells a completely new menu.","It is much larger.","It is open 24 hours."], a: 0, x: "新店舗には店内で飲食できる座席スペースがある点が異なります。メニューは同じです。" },
+    ],
+  },
+  {
+    t: "手紙",
+    passages: [
+      { label: "手紙", text: "Dear Mr. Reynolds,\n\nThank you for contacting our customer service department regarding the desk lamp you purchased on May 10. We are sorry to hear that the switch stopped working after only two weeks.\n\nSince the product is still under its one-year warranty, we are happy to replace it at no cost to you. A new lamp will be shipped to your address within five business days. You do not need to return the defective lamp; you may dispose of it or keep it for spare parts.\n\nAs a token of our apology, we have also included a coupon for 15% off your next purchase. We value your business and hope to serve you again.\n\nSincerely,\nGloria Adams\nCustomer Service Manager", jtext: "レイノルズ様\n\n5月10日にご購入いただいたデスクランプについて、当社のカスタマーサービス部門にご連絡いただきありがとうございます。わずか2週間でスイッチが動かなくなったとのこと、申し訳ございません。\n\n製品はまだ1年間の保証期間内ですので、無償で交換させていただきます。新しいランプは5営業日以内にご住所へ発送されます。不良のランプを返品する必要はございません。廃棄されても、予備部品として保管されても結構です。\n\nお詫びのしるしとして、次回のご購入に使える15%割引クーポンも同封いたしました。ご愛顧に感謝し、またのご利用をお待ちしております。\n\n敬具\nグロリア・アダムス\nカスタマーサービスマネージャー" },
+    ],
+    qs: [
+      { q: "Why did Mr. Reynolds contact the company?", jq: "レイノルズさんはなぜ会社に連絡したのですか?", c: ["A product he bought stopped working.","He wanted to order a new lamp.","He was charged the wrong amount.","He did not receive his order."], a: 0, x: "購入したランプのスイッチが動かなくなったため連絡しました。" },
+      { q: "What is Mr. Reynolds asked NOT to do?", jq: "レイノルズさんがしなくてよいと言われていることは何ですか?", c: ["Return the defective lamp","Contact customer service","Use the coupon","Wait five business days"], a: 0, x: "「You do not need to return the defective lamp(不良品を返品する必要はない)」とあります。" },
+      { q: "What was included with the letter?", jq: "手紙に同封されていたものは何ですか?", c: ["A discount coupon","A new switch","A warranty card","A product catalog"], a: 0, x: "次回購入に使える15%割引クーポンが同封されていました。" },
+    ],
+  },
+  {
+    t: "求人",
+    passages: [
+      { label: "求人情報", text: "Now Hiring: Assistant Store Manager\n\nHillside Books is seeking a motivated Assistant Store Manager for our downtown branch. This is a full-time position starting in October.\n\nResponsibilities:\n- Supervising staff and creating work schedules\n- Managing inventory and placing orders\n- Assisting customers and handling complaints\n\nRequirements:\n- At least two years of retail experience\n- Strong communication skills\n- Availability to work weekends\n\nA college degree is preferred but not required. We offer competitive pay, employee discounts, and opportunities for advancement.\n\nTo apply, send your resume and a cover letter to jobs@hillsidebooks.com by September 20. Only selected candidates will be contacted for an interview.", jtext: "求人: アシスタント店長\n\nヒルサイド・ブックスでは、ダウンタウン支店の意欲的なアシスタント店長を募集しています。10月開始のフルタイムのポジションです。\n\n職務:\n・スタッフの監督と勤務表の作成\n・在庫管理と発注\n・顧客対応と苦情処理\n\n応募要件:\n・小売業での2年以上の経験\n・高いコミュニケーション能力\n・週末の勤務が可能なこと\n\n大卒が望ましいですが必須ではありません。競争力のある給与、従業員割引、昇進の機会を提供します。\n\n応募は、履歴書とカバーレターを9月20日までにjobs@hillsidebooks.comへ送付してください。選ばれた候補者のみ面接のご連絡をします。" },
+    ],
+    qs: [
+      { q: "What position is being advertised?", jq: "どの職が募集されていますか?", c: ["Assistant Store Manager","Delivery driver","Book editor","Cashier"], a: 0, x: "アシスタント店長の求人です。" },
+      { q: "What is a requirement for the job?", jq: "この仕事の応募要件は何ですか?", c: ["Two years of retail experience","A college degree","Knowledge of a foreign language","A driver's license"], a: 0, x: "「At least two years of retail experience(小売業で2年以上の経験)」が要件です。大卒は望ましいが必須ではありません。" },
+      { q: "How should applicants apply?", jq: "応募者はどのように応募すべきですか?", c: ["By emailing a resume and cover letter","By visiting the store in person","By calling the manager","By filling out an online form"], a: 0, x: "履歴書とカバーレターをメールで送付します。" },
+    ],
+  },
+  {
+    t: "ダブルパッセージ",
+    passages: [
+      { label: "Eメール①", text: "To: Customer Support, TechGear Online\nFrom: Brian Coleman\nSubject: Order #48213\nDate: March 4\n\nHello,\n\nI ordered a wireless keyboard and a laptop stand on February 28. I received the package today, but only the laptop stand was inside. The keyboard was missing, although the invoice lists both items. Could you please send the missing keyboard as soon as possible? I need it for a presentation next week.\n\nThank you,\nBrian Coleman", jtext: "宛先: テックギア・オンライン カスタマーサポート\n差出人: ブライアン・コールマン\n件名: 注文番号48213\n日付: 3月4日\n\nこんにちは\n\n2月28日にワイヤレスキーボードとノートパソコンスタンドを注文しました。本日荷物を受け取りましたが、中にはノートパソコンスタンドしか入っていませんでした。請求書には両方の品目が記載されているのに、キーボードがありませんでした。不足しているキーボードをできるだけ早く送っていただけますか?来週のプレゼンで必要なのです。\n\nよろしくお願いします\nブライアン・コールマン" },
+      { label: "Eメール②", text: "To: Brian Coleman\nFrom: Customer Support, TechGear Online\nSubject: RE: Order #48213\nDate: March 5\n\nDear Mr. Coleman,\n\nWe sincerely apologize for the missing item. Our records show that the keyboard was temporarily out of stock when your order was shipped. It is now available, and we have shipped it today by express delivery at no extra charge. It should arrive within two days, well before your presentation.\n\nTo make up for the inconvenience, we have added 500 reward points to your account.\n\nBest regards,\nCustomer Support Team", jtext: "宛先: ブライアン・コールマン\n差出人: テックギア・オンライン カスタマーサポート\n件名: RE: 注文番号48213\n日付: 3月5日\n\nコールマン様\n\n品物が不足していたことを心よりお詫びいたします。記録によると、ご注文が発送された時点でキーボードが一時的に在庫切れでした。現在は入手可能となり、本日追加料金なしの速達で発送いたしました。2日以内、プレゼンの十分前に到着するはずです。\n\nご不便のお詫びとして、お客様のアカウントに500ポイントを追加いたしました。\n\n敬具\nカスタマーサポートチーム" },
+    ],
+    qs: [
+      { q: "What problem does Mr. Coleman describe?", jq: "コールマンさんはどんな問題を述べていますか?", c: ["An item was missing from his order.","He was charged twice.","The wrong item was delivered.","His package never arrived."], a: 0, x: "注文の中からキーボードが不足していたという問題です。" },
+      { q: "Why was the keyboard not included in the original shipment?", jq: "なぜキーボードは最初の発送に含まれていなかったのですか?", c: ["It was out of stock at the time.","It was damaged.","It was sent to the wrong address.","The order was canceled."], a: 0, x: "2通目のメールに「temporarily out of stock(一時的に在庫切れ)」だったとあります。" },
+      { q: "How did the company respond to the complaint?", jq: "会社は苦情にどう対応しましたか?", c: ["It shipped the item by express delivery for free.","It offered a full refund.","It asked him to return the stand.","It canceled the order."], a: 0, x: "追加料金なしの速達でキーボードを発送しました。" },
+      { q: "What did the company add to Mr. Coleman's account?", jq: "会社はコールマンさんのアカウントに何を追加しましたか?", c: ["Reward points","A gift card","A free keyboard cover","A discount coupon"], a: 0, x: "お詫びとして500ポイント(reward points)を追加しました。" },
+    ],
+  },
+  {
+    t: "ダブルパッセージ",
+    passages: [
+      { label: "案内", text: "Northgate Community Center — Fall Workshop Schedule\n\nAll workshops are held on Saturdays and last two hours. Advance registration is required.\n\n- Digital Photography — 10:00 A.M., Room 101, $30\n- Creative Writing — 1:00 P.M., Room 102, $25\n- Watercolor Painting — 10:00 A.M., Room 103, $35\n- Public Speaking — 1:00 P.M., Room 104, $20\n\nTo register, visit the front desk or call 555-0198. Space is limited to 12 people per workshop. Members of the community center receive a 20% discount on all fees.", jtext: "ノースゲート・コミュニティセンター — 秋のワークショップ予定\n\nすべてのワークショップは土曜開催で、2時間続きます。事前登録が必要です。\n\n・デジタル写真 — 午前10時、101号室、30ドル\n・創作文章 — 午後1時、102号室、25ドル\n・水彩画 — 午前10時、103号室、35ドル\n・パブリックスピーキング — 午後1時、104号室、20ドル\n\n登録は受付にお越しになるか、555-0198にお電話ください。定員は各ワークショップ12名です。コミュニティセンター会員は全料金が20%割引になります。" },
+      { label: "Eメール", text: "To: Northgate Community Center\nFrom: Susan Wright\nSubject: Workshop Registration\nDate: September 8\n\nHello,\n\nI would like to register for the watercolor painting workshop next Saturday. I am a member of the community center, so I believe I qualify for the discount. Also, my daughter is interested in the afternoon writing workshop. Is it suitable for a 15-year-old? Please let me know if there is a minimum age requirement.\n\nThank you,\nSusan Wright", jtext: "宛先: ノースゲート・コミュニティセンター\n差出人: スーザン・ライト\n件名: ワークショップの登録\n日付: 9月8日\n\nこんにちは\n\n来週土曜の水彩画ワークショップに登録したいです。私はコミュニティセンターの会員なので、割引の対象になると思います。また、娘が午後の文章のワークショップに興味を持っています。15歳に適していますか?年齢の下限があれば教えてください。\n\nよろしくお願いします\nスーザン・ライト" },
+    ],
+    qs: [
+      { q: "How much will Ms. Wright pay for her workshop?", jq: "ライトさんはワークショップにいくら払いますか?", c: ["$28","$35","$30","$25"], a: 0, x: "水彩画は35ドルで、会員は20%割引なので35×0.8=28ドルです。案内とメールの両方の情報を組み合わせて計算します。" },
+      { q: "At what time is the workshop Ms. Wright wants to attend?", jq: "ライトさんが参加したいワークショップは何時開催ですか?", c: ["10:00 A.M.","1:00 P.M.","2:00 P.M.","9:00 A.M."], a: 0, x: "水彩画(Watercolor Painting)は午前10時開催です。" },
+      { q: "What does Ms. Wright ask about the writing workshop?", jq: "ライトさんは文章のワークショップについて何を尋ねていますか?", c: ["Whether there is a minimum age requirement","Whether it is free for members","Whether it lasts three hours","Whether it is held on Sunday"], a: 0, x: "娘のために年齢の下限(minimum age requirement)があるか尋ねています。" },
+      { q: "What is indicated about all the workshops?", jq: "すべてのワークショップについて何が示されていますか?", c: ["They require advance registration.","They are free of charge.","They are held on weekdays.","They have no limit on participants."], a: 0, x: "案内に「Advance registration is required(事前登録が必要)」とあります。" },
+    ],
+  },
+];

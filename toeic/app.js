@@ -12,11 +12,12 @@ const QUIZ_SET_SIZE = 10;
 
 function defaultState() {
   return {
-    settings: { examDate: defaultExamDate(), goalWords: 20, goalQuiz: 10, goalListen: 10, sound: true, autoSpeak: true },
+    settings: { examDate: defaultExamDate(), goalWords: 20, goalQuiz: 10, goalListen: 10, goalRead: 6, sound: true, autoSpeak: true },
     words: {},       // wordIndex -> { lv, next, seen, ok }
     quizStats: {},   // questionIndex -> { lv, next, seen, ok }(単語と同じ間隔反復)
     listenStats: {}, // part2Index -> { lv, next, seen, ok }(同上)
     part1Stats: {},  // part1Index -> { lv, next, seen, ok }(同上)
+    readStats: {},   // reading文書セットindex -> { lv, next, seen, ok }(セット全問正解でレベルUP)
     xp: 0,           // 累計XP(レベルはここから算出)
     goalDone: "",    // ノルマ全達成を祝った日(1日1回だけ祝う)
     daily: null,     // { date, claimed: [id...] } デイリーチャレンジの達成記録
@@ -42,7 +43,7 @@ function loadState() {
     const s = JSON.parse(raw);
     const merged = { ...defaultState(), ...s, settings: { ...defaultState().settings, ...s.settings } };
     // 旧形式(lv/nextなし)の文法・リスニング記録を間隔反復形式へ移行
-    [merged.quizStats, merged.listenStats, merged.part1Stats].forEach((stats) => {
+    [merged.quizStats, merged.listenStats, merged.part1Stats, merged.readStats].forEach((stats) => {
       Object.values(stats).forEach((st) => {
         if (st.lv === undefined) {
           st.lv = st.ok > 0 ? 1 : 0;
@@ -91,13 +92,13 @@ function daysUntil(key) {
 
 function todayLog() {
   const k = todayKey();
-  if (!state.log[k]) state.log[k] = { words: 0, quiz: 0, correct: 0, listen: 0, listenOk: 0 };
+  if (!state.log[k]) state.log[k] = { words: 0, quiz: 0, correct: 0, listen: 0, listenOk: 0, read: 0, readOk: 0 };
   return state.log[k];
 }
 
-// 過去のログにはlistenが無い場合があるため合計はこの関数で取る
+// 過去のログにはlisten/readが無い場合があるため合計はこの関数で取る
 function logTotal(l) {
-  return l ? l.words + l.quiz + (l.listen || 0) : 0;
+  return l ? l.words + l.quiz + (l.listen || 0) + (l.read || 0) : 0;
 }
 
 // ---- 効果音 (Web Audio APIで合成・音声ファイル不要) ----
@@ -263,7 +264,8 @@ function goalsMetToday() {
   if (!log) return false;
   return log.words >= state.settings.goalWords &&
     log.quiz >= state.settings.goalQuiz &&
-    (log.listen || 0) >= state.settings.goalListen;
+    (log.listen || 0) >= state.settings.goalListen &&
+    (log.read || 0) >= state.settings.goalRead;
 }
 
 // 1日のノルマ全達成を1回だけ祝う(セット終了時にチェック)
@@ -294,13 +296,15 @@ function titleForLevel(level) {
 const BADGE_XP = 50;
 
 function aggregates() {
-  const a = { words: 0, quiz: 0, correct: 0, listen: 0, listenOk: 0, maxCombo: 0, perfects: 0, activeDays: 0 };
+  const a = { words: 0, quiz: 0, correct: 0, listen: 0, listenOk: 0, read: 0, readOk: 0, maxCombo: 0, perfects: 0, activeDays: 0 };
   Object.values(state.log).forEach((l) => {
     a.words += l.words;
     a.quiz += l.quiz;
     a.correct += l.correct;
     a.listen += l.listen || 0;
     a.listenOk += l.listenOk || 0;
+    a.read += l.read || 0;
+    a.readOk += l.readOk || 0;
     a.maxCombo = Math.max(a.maxCombo, l.maxCombo || 0);
     a.perfects += l.perfects || 0;
     if (logTotal(l) > 0) a.activeDays++;
@@ -315,6 +319,7 @@ const BADGES = [
   { id: "q50", icon: "✏️", name: "文法の芽", desc: "文法で累計50問正解する", cond: (a) => a.correct >= 50 },
   { id: "q200", icon: "🎓", name: "文法の達人", desc: "文法で累計200問正解する", cond: (a) => a.correct >= 200 },
   { id: "l100", icon: "🎧", name: "英語耳", desc: "リスニングを累計100問解く", cond: (a) => a.listen >= 100 },
+  { id: "r30", icon: "📖", name: "速読の入り口", desc: "読解を累計30問解く", cond: (a) => a.read >= 30 },
   { id: "combo10", icon: "🔥", name: "鬼コンボ", desc: "10連続正解を達成する", cond: (a) => a.maxCombo >= 10 },
   { id: "perfect5", icon: "💯", name: "パーフェクト主義", desc: "パーフェクトセットを5回達成する", cond: (a) => a.perfects >= 5 },
   { id: "streak3", icon: "📅", name: "三日坊主卒業", desc: "3日連続で学習する", cond: () => calcStreak() >= 3 },
@@ -348,9 +353,10 @@ const DAILY_POOL = [
   { id: "listen10", label: "リスニングを10問解く", xp: 30, target: 10, progress: (l) => l.listen || 0 },
   { id: "correct8", label: "文法で8問正解する", xp: 35, target: 8, progress: (l) => l.correct },
   { id: "listenOk7", label: "リスニングで7問正解する", xp: 35, target: 7, progress: (l) => l.listenOk || 0 },
+  { id: "read6", label: "読解を6問解く", xp: 30, target: 6, progress: (l) => l.read || 0 },
   { id: "combo5", label: "5連続正解を達成する", xp: 40, target: 5, progress: (l) => l.maxCombo || 0 },
   { id: "perfect", label: "パーフェクトセットを達成する", xp: 50, target: 1, progress: (l) => l.perfects || 0 },
-  { id: "allthree", label: "単語・文法・リスニングを全部やる", xp: 35, target: 3, progress: (l) => (l.words > 0 ? 1 : 0) + (l.quiz > 0 ? 1 : 0) + ((l.listen || 0) > 0 ? 1 : 0) },
+  { id: "allfour", label: "単語・文法・リスニング・読解を全部やる", xp: 40, target: 4, progress: (l) => (l.words > 0 ? 1 : 0) + (l.quiz > 0 ? 1 : 0) + ((l.listen || 0) > 0 ? 1 : 0) + ((l.read || 0) > 0 ? 1 : 0) },
 ];
 
 function dailyChallenges() {
@@ -395,7 +401,7 @@ function checkDailyChallenges() {
 
 // ---- タブ切り替え ----
 
-const TABS = ["home", "words", "quiz", "listen", "stats"];
+const TABS = ["home", "words", "quiz", "listen", "read", "stats"];
 
 function showTab(name) {
   TABS.forEach((t) => {
@@ -406,10 +412,12 @@ function showTab(name) {
   });
   if (name !== "listen") stopListenAudio();
   if (name !== "quiz") stopTaTimer(); // タブを離れたらタイマーを止める
+  if (name !== "read") stopReadTimer(); // 読解タイマーも止める
   if (name === "home") renderHome();
   if (name === "words") renderWordsStart();
   if (name === "quiz") renderQuizStart();
   if (name === "listen") renderListenStart();
+  if (name === "read") renderReadStart();
   if (name === "stats") renderStats();
   window.scrollTo(0, 0);
 }
@@ -446,22 +454,26 @@ function renderHome() {
   document.getElementById("countdown-date").textContent =
     days >= 0 ? `${y}年${m}月${d}日` : "試験日を設定してください(⚙️)";
 
-  const log = state.log[todayKey()] || { words: 0, quiz: 0, correct: 0, listen: 0 };
+  const log = state.log[todayKey()] || { words: 0, quiz: 0, correct: 0, listen: 0, read: 0 };
   const listen = log.listen || 0;
+  const read = log.read || 0;
   const gw = state.settings.goalWords;
   const gq = state.settings.goalQuiz;
   const gl = state.settings.goalListen;
+  const gr = state.settings.goalRead;
   document.getElementById("goal-bar-words").style.width = `${Math.min(100, (log.words / gw) * 100)}%`;
   document.getElementById("goal-bar-quiz").style.width = `${Math.min(100, (log.quiz / gq) * 100)}%`;
   document.getElementById("goal-bar-listen").style.width = `${Math.min(100, (listen / gl) * 100)}%`;
+  document.getElementById("goal-bar-read").style.width = `${Math.min(100, (read / gr) * 100)}%`;
   document.getElementById("goal-count-words").textContent = `${log.words} / ${gw}枚`;
   document.getElementById("goal-count-quiz").textContent = `${log.quiz} / ${gq}問`;
   document.getElementById("goal-count-listen").textContent = `${listen} / ${gl}問`;
+  document.getElementById("goal-count-read").textContent = `${read} / ${gr}問`;
 
   const msg = document.getElementById("goal-message");
-  if (log.words >= gw && log.quiz >= gq && listen >= gl) {
+  if (log.words >= gw && log.quiz >= gq && listen >= gl && read >= gr) {
     msg.textContent = "今日のノルマ達成!この調子!🎉";
-  } else if (log.words + log.quiz + listen > 0) {
+  } else if (log.words + log.quiz + listen + read > 0) {
     msg.textContent = "いいペース!あと少し💪";
   } else {
     msg.textContent = "";
@@ -1305,6 +1317,278 @@ document.getElementById("listen-again-btn").addEventListener("click", () => star
 document.getElementById("listen-play-btn").addEventListener("click", playListenAudio);
 document.getElementById("listen-next-btn").addEventListener("click", nextListenQuestion);
 
+// ---- 読解 (Part 7: 文書読解) ----
+// READINGは文書セットの配列。各セットは passages(1〜2文書)+ qs(2〜4設問)。
+// SRSは「文書セット単位」: セット内の全設問に正解するとレベルUP(間隔が延びる)、
+// 1問でも間違えるとレベル0に戻る。読解の狙いは「速く正確に読む」練習なのでタイマーを表示する。
+
+const READ_SET_SIZE = 2; // 1セッションで扱う文書セット数
+
+let readQueue = [];   // 出題する文書セットindexの配列
+let readPos = 0;      // 現在の文書セット(readQueue内の位置)
+let readQPos = 0;     // 現在の設問(セット内の位置)
+let readCorrect = 0;  // セッション内の正解設問数
+let readTotal = 0;    // セッション内の解答設問数
+let readCombo = 0;
+let readSetOk = true; // 現在の文書セットで全問正解しているか(SRS判定用)
+let readOrder = [];   // 現在の設問の選択肢表示順
+let readStartMs = 0;
+let readTimerId = null;
+
+function buildReadQueue() {
+  const stats = state.readStats;
+  const size = Math.min(READ_SET_SIZE, READING.length);
+  const today = todayKey();
+  const due = [], fresh = [], future = [];
+  READING.forEach((_, i) => {
+    const st = stats[i];
+    if (!st || st.seen === 0) fresh.push(i);
+    else if (st.next <= today) due.push(i);
+    else future.push(i);
+  });
+  due.sort((a, b) => stats[a].lv - stats[b].lv);
+  shuffleArray(fresh);
+  // 復習が多くても新しい文書が出続けるよう、半分は新出枠として確保する
+  const newSlots = Math.min(fresh.length, Math.max(1, Math.round(size * 0.5)));
+  const queue = fresh.splice(0, newSlots);
+  while (queue.length < size && due.length > 0) queue.push(due.shift());
+  while (queue.length < size && fresh.length > 0) queue.push(fresh.shift());
+  if (queue.length < size) {
+    future.sort((a, b) => (stats[a].next < stats[b].next ? -1 : 1));
+    while (queue.length < size && future.length > 0) queue.push(future.shift());
+  }
+  return shuffleArray(queue);
+}
+
+function readDueNewCounts() {
+  const today = todayKey();
+  let due = 0, fresh = 0;
+  READING.forEach((_, i) => {
+    const st = state.readStats[i];
+    if (!st || st.seen === 0) fresh++;
+    else if (st.next <= today) due++;
+  });
+  return { due, fresh };
+}
+
+function readTotalQuestions() {
+  return READING.reduce((n, s) => n + s.qs.length, 0);
+}
+
+function renderReadStart() {
+  document.getElementById("read-start").classList.remove("hidden");
+  document.getElementById("read-session").classList.add("hidden");
+  document.getElementById("read-result").classList.add("hidden");
+  const { due, fresh } = readDueNewCounts();
+  document.getElementById("read-summary").innerHTML =
+    `復習する文書: <strong>${due}</strong> 件 ／ 新しい文書: <strong>${fresh}</strong> 件(全${READING.length}件・${readTotalQuestions()}問)`;
+  const c = srsRetentionCounts(READING.length, state.readStats);
+  renderRetentionBar("read-retention-bar", c, READING.length);
+  document.getElementById("read-retention-text").textContent = retentionText(c) + "(文書セット単位)";
+}
+
+function startRead() {
+  readQueue = buildReadQueue();
+  if (readQueue.length === 0) return;
+  readPos = 0;
+  readQPos = 0;
+  readCorrect = 0;
+  readTotal = 0;
+  readCombo = 0;
+  readSetOk = true;
+  sessionXp = 0;
+  document.getElementById("read-start").classList.add("hidden");
+  document.getElementById("read-result").classList.add("hidden");
+  document.getElementById("read-session").classList.remove("hidden");
+  startReadTimer();
+  renderReadPassages();
+  showReadQuestion();
+}
+
+function startReadTimer() {
+  readStartMs = Date.now();
+  stopReadTimer();
+  readTimerId = setInterval(updateReadTimer, 500);
+  updateReadTimer();
+}
+function stopReadTimer() {
+  if (readTimerId) { clearInterval(readTimerId); readTimerId = null; }
+}
+function updateReadTimer() {
+  const sec = Math.floor((Date.now() - readStartMs) / 1000);
+  const m = Math.floor(sec / 60);
+  const s = String(sec % 60).padStart(2, "0");
+  const el = document.getElementById("read-timer");
+  if (el) el.textContent = `⏱️ ${m}:${s}`;
+}
+
+function currentReadSet() {
+  return READING[readQueue[readPos]];
+}
+
+function renderReadPassages() {
+  const set = currentReadSet();
+  const box = document.getElementById("read-passages");
+  box.innerHTML = "";
+  set.passages.forEach((p) => {
+    const wrap = document.createElement("div");
+    wrap.className = "read-doc";
+    const label = document.createElement("p");
+    label.className = "read-doc-label";
+    label.textContent = p.label;
+    const body = document.createElement("p");
+    body.className = "read-doc-text";
+    body.textContent = p.text;
+    wrap.appendChild(label);
+    wrap.appendChild(body);
+    box.appendChild(wrap);
+  });
+}
+
+function showReadQuestion() {
+  const set = currentReadSet();
+  const q = set.qs[readQPos];
+  document.getElementById("read-progress").textContent =
+    `文書 ${readPos + 1}/${readQueue.length}　設問 ${readQPos + 1}/${set.qs.length}`;
+  document.getElementById("read-qtype").textContent = set.t;
+  document.getElementById("read-question").textContent = q.q;
+  document.getElementById("read-feedback").classList.add("hidden");
+
+  // 選択肢の表示順をシャッフル(正解位置を覚えてしまうのを防ぐ)
+  readOrder = q.c.map((_, i) => i);
+  for (let i = readOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [readOrder[i], readOrder[j]] = [readOrder[j], readOrder[i]];
+  }
+  const box = document.getElementById("read-choices");
+  box.innerHTML = "";
+  const labels = ["(A)", "(B)", "(C)", "(D)"];
+  readOrder.forEach((orig, pos) => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.dataset.orig = orig;
+    btn.textContent = `${labels[pos]} ${q.c[orig]}`;
+    btn.addEventListener("click", () => answerRead(orig, btn));
+    box.appendChild(btn);
+  });
+}
+
+function answerRead(chosen, btn) {
+  const set = currentReadSet();
+  const q = set.qs[readQPos];
+  const correct = chosen === q.a;
+  if (correct) { readCombo++; seCorrect(readCombo); }
+  else { readCombo = 0; readSetOk = false; seWrong(); }
+  const gained = correct ? (readCombo >= 3 ? 15 : 10) : 2;
+  addXp(gained);
+
+  document.querySelectorAll("#read-choices .choice-btn").forEach((b) => {
+    b.disabled = true;
+    if (Number(b.dataset.orig) === q.a) b.classList.add("correct");
+  });
+  if (!correct) btn.classList.add("wrong");
+
+  readTotal++;
+  const log = todayLog();
+  log.read = (log.read || 0) + 1;
+  if (correct) {
+    readCorrect++;
+    log.readOk = (log.readOk || 0) + 1;
+    log.maxCombo = Math.max(log.maxCombo || 0, readCombo);
+  }
+  saveState();
+  checkDailyChallenges();
+
+  const verdict = document.getElementById("read-verdict");
+  verdict.textContent = correct
+    ? `正解! ⭕ +${gained}XP${readCombo >= 2 ? ` 🔥${readCombo}連続!` : ""}`
+    : "残念… ❌ +2XP";
+  verdict.className = `quiz-verdict ${correct ? "good" : "bad"}`;
+
+  const script = document.getElementById("read-script");
+  script.innerHTML = "";
+  const qLine = document.createElement("p");
+  qLine.className = "script-q";
+  qLine.innerHTML = `<strong>${q.q}</strong><br><span>${q.jq}</span>`;
+  script.appendChild(qLine);
+  const aLine = document.createElement("p");
+  aLine.className = "script-line correct";
+  aLine.textContent = `正解: ${q.c[q.a]}`;
+  script.appendChild(aLine);
+
+  document.getElementById("read-explanation").textContent = q.x;
+  const isLastQ = readQPos + 1 >= set.qs.length;
+  const isLastSet = readPos + 1 >= readQueue.length;
+  document.getElementById("read-next-btn").textContent =
+    !isLastQ ? "次の設問へ" : (isLastSet ? "結果を見る" : "次の文書へ");
+  document.getElementById("read-feedback").classList.remove("hidden");
+}
+
+function finalizeReadSet() {
+  // 文書セット単位のSRS: 全問正解でレベルUP、1問でも間違えるとレベル0
+  const idx = readQueue[readPos];
+  const st = state.readStats[idx] || { lv: 0, next: todayKey(), seen: 0, ok: 0 };
+  st.seen++;
+  if (readSetOk) { st.ok++; st.lv = Math.min(MAX_LEVEL, st.lv + 1); }
+  else { st.lv = 0; }
+  st.next = addDays(todayKey(), INTERVALS[st.lv]);
+  state.readStats[idx] = st;
+  saveState();
+}
+
+function nextReadQuestion() {
+  const set = currentReadSet();
+  if (readQPos + 1 < set.qs.length) {
+    readQPos++;
+    showReadQuestion();
+    return;
+  }
+  // 文書セット終了 → SRSを確定
+  finalizeReadSet();
+  if (readPos + 1 < readQueue.length) {
+    readPos++;
+    readQPos = 0;
+    readSetOk = true;
+    renderReadPassages();
+    showReadQuestion();
+    window.scrollTo(0, 0);
+  } else {
+    finishRead();
+  }
+}
+
+function finishRead() {
+  stopReadTimer();
+  seFinish();
+  const pct = readTotal > 0 ? Math.round((readCorrect / readTotal) * 100) : 0;
+  addXp(20 + (pct === 100 ? 30 : 0)); // 完了ボーナス+パーフェクトボーナス
+  if (pct === 100) { const log = todayLog(); log.perfects = (log.perfects || 0) + 1; }
+  saveState();
+  checkDailyChallenges();
+  const sec = Math.floor((Date.now() - readStartMs) / 1000);
+  const min = sec / 60;
+  const pace = min > 0 ? (readTotal / min).toFixed(1) : String(readTotal);
+  const mm = Math.floor(sec / 60);
+  const ss = String(sec % 60).padStart(2, "0");
+  document.getElementById("read-session").classList.add("hidden");
+  document.getElementById("read-result").classList.remove("hidden");
+  const emoji = pct === 100 ? "👑" : pct >= 80 ? "🏆" : pct >= 60 ? "🎉" : "📖";
+  const title = pct === 100 ? "パーフェクト!!" : pct >= 80 ? "すばらしい!" : pct >= 60 ? "その調子!" : "解説を読み返そう";
+  document.getElementById("read-result-emoji").textContent = emoji;
+  document.getElementById("read-result-title").textContent = title;
+  document.getElementById("read-result-text").innerHTML =
+    `${readTotal}問中 <strong>${readCorrect}</strong> 問正解(${pct}%)<br>` +
+    `所要時間: <strong>${mm}:${ss}</strong> ／ ペース: <strong>${pace}</strong> 問/分<br>` +
+    `本番Part 7は約54問を約55分で解きます(目安 約1問/分)。<br>` +
+    `獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
+  if (pct === 100) confetti();
+  maybeCelebrateGoal();
+}
+
+document.getElementById("read-start-btn").addEventListener("click", startRead);
+document.getElementById("read-again-btn").addEventListener("click", startRead);
+document.getElementById("read-next-btn").addEventListener("click", nextReadQuestion);
+
 // ---- 記録 ----
 
 function renderStats() {
@@ -1315,11 +1599,14 @@ function renderStats() {
   for (let i = 13; i >= 0; i--) days.push(addDays(todayKey(), -i));
   const max = Math.max(10, ...days.map((k) => logTotal(state.log[k])));
   days.forEach((k) => {
-    const l = state.log[k] || { words: 0, quiz: 0, listen: 0 };
+    const l = state.log[k] || { words: 0, quiz: 0, listen: 0, read: 0 };
     const col = document.createElement("div");
     col.className = "chart-col";
     const wrap = document.createElement("div");
     wrap.style.cssText = "flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;";
+    const segR = document.createElement("div");
+    segR.className = "chart-seg-read";
+    segR.style.height = `${((l.read || 0) / max) * 100}%`;
     const segL = document.createElement("div");
     segL.className = "chart-seg-listen";
     segL.style.height = `${((l.listen || 0) / max) * 100}%`;
@@ -1329,6 +1616,7 @@ function renderStats() {
     const segW = document.createElement("div");
     segW.className = "chart-seg-words";
     segW.style.height = `${(l.words / max) * 100}%`;
+    wrap.appendChild(segR);
     wrap.appendChild(segL);
     wrap.appendChild(segQ);
     wrap.appendChild(segW);
@@ -1441,6 +1729,37 @@ function renderStats() {
       listenAccList.appendChild(row);
     });
 
+  // 読解の定着度(文書セット単位)+ 全体正答率(問題単位)+ 文書タイプ別の定着率
+  const aggR = aggregates();
+  document.getElementById("accuracy-read-total").textContent =
+    aggR.read > 0 ? `全体: ${Math.round((aggR.readOk / aggR.read) * 100)}%(${aggR.read}問解答)` : "まだ読解を解いていません";
+  const readRet = srsRetentionCounts(READING.length, state.readStats);
+  renderRetentionBar("stats-read-retention-bar", readRet, READING.length);
+  document.getElementById("stats-read-retention-text").textContent = retentionText(readRet) + "(文書セット単位)";
+  renderForecast("read-forecast-chart", [state.readStats]);
+  const readByType = {};
+  READING.forEach((set, i) => {
+    const st = state.readStats[i];
+    if (!st || st.seen === 0) return;
+    if (!readByType[set.t]) readByType[set.t] = { seen: 0, ok: 0 };
+    readByType[set.t].seen += st.seen;
+    readByType[set.t].ok += st.ok;
+  });
+  const readAccList = document.getElementById("accuracy-read-list");
+  readAccList.innerHTML = "";
+  Object.entries(readByType)
+    .sort((a, b) => (a[1].ok / a[1].seen) - (b[1].ok / b[1].seen))
+    .forEach(([type, s]) => {
+      const pct = Math.round((s.ok / s.seen) * 100);
+      const row = document.createElement("div");
+      row.className = "acc-row";
+      row.innerHTML =
+        `<span class="acc-name">${type}</span>` +
+        `<div class="acc-bar"><div class="acc-bar-fill" style="width:${pct}%"></div></div>` +
+        `<span class="acc-pct">${pct}%</span>`;
+      readAccList.appendChild(row);
+    });
+
   // 実績バッジ(解除済みはカラー、未解除はグレー+条件表示)
   const badgeGrid = document.getElementById("badge-grid");
   badgeGrid.innerHTML = "";
@@ -1484,6 +1803,7 @@ document.getElementById("settings-btn").addEventListener("click", () => {
   document.getElementById("goal-words-input").value = state.settings.goalWords;
   document.getElementById("goal-quiz-input").value = state.settings.goalQuiz;
   document.getElementById("goal-listen-input").value = state.settings.goalListen;
+  document.getElementById("goal-read-input").value = state.settings.goalRead;
   document.getElementById("sound-input").checked = state.settings.sound;
   document.getElementById("autospeak-input").checked = state.settings.autoSpeak;
   settingsDialog.showModal();
@@ -1494,10 +1814,12 @@ document.getElementById("settings-save-btn").addEventListener("click", () => {
   const gw = parseInt(document.getElementById("goal-words-input").value, 10);
   const gq = parseInt(document.getElementById("goal-quiz-input").value, 10);
   const gl = parseInt(document.getElementById("goal-listen-input").value, 10);
+  const gr = parseInt(document.getElementById("goal-read-input").value, 10);
   if (date) state.settings.examDate = date;
   if (gw >= 1) state.settings.goalWords = gw;
   if (gq >= 1) state.settings.goalQuiz = gq;
   if (gl >= 1) state.settings.goalListen = gl;
+  if (gr >= 1) state.settings.goalRead = gr;
   state.settings.sound = document.getElementById("sound-input").checked;
   state.settings.autoSpeak = document.getElementById("autospeak-input").checked;
   saveState();
@@ -1512,6 +1834,7 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   state.quizStats = {};
   state.listenStats = {};
   state.part1Stats = {};
+  state.readStats = {};
   state.log = {};
   saveState();
   settingsDialog.close();
