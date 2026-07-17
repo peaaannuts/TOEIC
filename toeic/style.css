@@ -129,6 +129,27 @@ html, body {
 .countdown-unit { font-size: 18px; margin-left: 4px; }
 .countdown-date { margin: 0; color: var(--sub); font-size: 13px; }
 
+.score-card { text-align: center; }
+.score-label { margin: 0; font-size: 14px; font-weight: 700; color: var(--text); }
+.score-sublabel { font-size: 11px; font-weight: 400; color: var(--sub); }
+.score-total { margin: 4px 0 8px; }
+#score-total-num { font-size: 46px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.score-max { font-size: 16px; color: var(--sub); }
+.score-breakdown { display: flex; gap: 10px; }
+.score-seg {
+  flex: 1;
+  background: var(--accent-light);
+  border-radius: 10px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.score-seg-label { font-size: 11px; color: var(--sub); }
+.score-seg-num { font-size: 22px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+.score-diagnosis { margin: 10px 0 4px; font-size: 13px; font-weight: 700; color: var(--ok); }
+.score-note { margin: 0; font-size: 11px; color: var(--sub); line-height: 1.5; }
+
 .goal-row {
   display: flex;
   align-items: center;

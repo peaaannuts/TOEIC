@@ -26,6 +26,23 @@
       <p class="countdown-date" id="countdown-date"></p>
     </div>
 
+    <div class="card score-card">
+      <p class="score-label">📈 推定スコア <span class="score-sublabel">演習成績からの目安</span></p>
+      <p class="score-total"><span id="score-total-num">--</span><span class="score-max"> / 990</span></p>
+      <div class="score-breakdown">
+        <div class="score-seg">
+          <span class="score-seg-label">Listening</span>
+          <span class="score-seg-num" id="score-listen">--</span>
+        </div>
+        <div class="score-seg">
+          <span class="score-seg-label">Reading</span>
+          <span class="score-seg-num" id="score-read">--</span>
+        </div>
+      </div>
+      <p class="score-diagnosis" id="score-diagnosis"></p>
+      <p class="score-note">※現在アプリにあるPartの演習成績からのおおよその推定です。本番の実際のスコアとは異なります。</p>
+    </div>
+
     <div class="card level-card">
       <div class="level-row">
         <span class="level-badge">Lv.<span id="level-num">1</span></span>
@@ -396,6 +413,9 @@
     </label>
     <label>1日の読解ノルマ(問)
       <input type="number" id="goal-read-input" min="2" max="40" step="2">
+    </label>
+    <label>目標スコア(推定スコアの基準)
+      <input type="number" id="target-score-input" min="10" max="990" step="5">
     </label>
     <label class="check-row">
       <input type="checkbox" id="sound-input">

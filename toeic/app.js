@@ -12,7 +12,7 @@ const QUIZ_SET_SIZE = 10;
 
 function defaultState() {
   return {
-    settings: { examDate: defaultExamDate(), goalWords: 20, goalQuiz: 10, goalListen: 10, goalRead: 6, sound: true, autoSpeak: true },
+    settings: { examDate: defaultExamDate(), goalWords: 20, goalQuiz: 10, goalListen: 10, goalRead: 6, targetScore: 600, sound: true, autoSpeak: true },
     words: {},       // wordIndex -> { lv, next, seen, ok }
     quizStats: {},   // questionIndex -> { lv, next, seen, ok }(単語と同じ間隔反復)
     listenStats: {}, // part2Index -> { lv, next, seen, ok }(同上)
@@ -447,7 +447,82 @@ function countMastered() {
   return Object.values(state.words).filter((w) => w.lv >= MASTERED_LEVEL).length;
 }
 
+// ---- 推定スコア ----
+// アプリの演習成績(正答率)からTOEIC L&Rの目安スコアを推定する。
+// リスニング=Part1+Part2、リーディング=文法(Part5)+読解(Part7)+単語(語彙は基礎として軽め重み)。
+// 練習問題は本番より易しくSRSの反復で正答率が上がりやすいため、acc^1.3のやや保守的な曲線で換算する。
+
+function pairSum(statsObj, weight) {
+  const w = weight === undefined ? 1 : weight;
+  let ok = 0, seen = 0;
+  Object.values(statsObj).forEach((st) => { ok += (st.ok || 0) * w; seen += (st.seen || 0) * w; });
+  return { ok, seen };
+}
+
+// 正答率(0..1)→ セクションスコア(5..495、5点刻み)
+function sectionScoreFromAcc(acc) {
+  const eff = Math.pow(Math.max(0, Math.min(1, acc)), 1.3);
+  return Math.max(5, Math.min(495, Math.round((5 + eff * 490) / 5) * 5));
+}
+
+// 推定スコアの内訳を計算(データ不足のセクションは seen で判定)
+function estimateScore() {
+  const agg = aggregates();
+  const p1 = pairSum(state.part1Stats);
+  const p2 = pairSum(state.listenStats);
+  const listenSeen = p1.seen + p2.seen;
+  const listenOk = p1.ok + p2.ok;
+  // リーディング: 文法・読解は等倍、語彙(単語)は基礎指標として0.5倍で反映
+  const gr = pairSum(state.quizStats);
+  const vo = pairSum(state.words, 0.5);
+  const readSeen = gr.seen + vo.seen + agg.read;
+  const readOk = gr.ok + vo.ok + agg.readOk;
+  return {
+    listenSeen, readSeen,
+    listen: listenSeen > 0 ? sectionScoreFromAcc(listenOk / listenSeen) : null,
+    read: readSeen > 0 ? sectionScoreFromAcc(readOk / readSeen) : null,
+  };
+}
+
+function renderScore() {
+  const est = estimateScore();
+  const totalEl = document.getElementById("score-total-num");
+  const lEl = document.getElementById("score-listen");
+  const rEl = document.getElementById("score-read");
+  const diag = document.getElementById("score-diagnosis");
+
+  const MIN_SEEN = 10; // これ未満のセクションは推定を控える
+  const listenReady = est.listenSeen >= MIN_SEEN;
+  const readReady = est.readSeen >= MIN_SEEN;
+
+  lEl.textContent = listenReady ? est.listen : "--";
+  rEl.textContent = readReady ? est.read : "--";
+
+  if (!listenReady && !readReady) {
+    totalEl.textContent = "--";
+    diag.textContent = "各セクションを少し解くと推定スコアが表示されます。";
+    return;
+  }
+  if (!listenReady || !readReady) {
+    totalEl.textContent = "--";
+    diag.textContent = listenReady
+      ? "単語・文法・読解をもう少し解くとリーディングも推定できます。"
+      : "リスニングをもう少し解くと推定できます。";
+    return;
+  }
+
+  const total = est.listen + est.read;
+  totalEl.textContent = total;
+  const target = state.settings.targetScore || 600;
+  const parts = [];
+  parts.push(total < target ? `目標${target}まであと ${target - total} 点` : `目標${target}を突破!🎉`);
+  parts.push(est.listen <= est.read ? "次はリスニング重点がおすすめ" : "次はリーディング重点がおすすめ");
+  const conf = Math.min(est.listenSeen, est.readSeen);
+  diag.textContent = parts.join(" ／ ") + (conf < 20 ? "(まだデータ少なめ・参考値)" : "");
+}
+
 function renderHome() {
+  renderScore();
   const days = daysUntil(state.settings.examDate);
   document.getElementById("countdown-num").textContent = days >= 0 ? days : "--";
   const [y, m, d] = state.settings.examDate.split("-").map(Number);
@@ -1804,6 +1879,7 @@ document.getElementById("settings-btn").addEventListener("click", () => {
   document.getElementById("goal-quiz-input").value = state.settings.goalQuiz;
   document.getElementById("goal-listen-input").value = state.settings.goalListen;
   document.getElementById("goal-read-input").value = state.settings.goalRead;
+  document.getElementById("target-score-input").value = state.settings.targetScore;
   document.getElementById("sound-input").checked = state.settings.sound;
   document.getElementById("autospeak-input").checked = state.settings.autoSpeak;
   settingsDialog.showModal();
@@ -1815,11 +1891,13 @@ document.getElementById("settings-save-btn").addEventListener("click", () => {
   const gq = parseInt(document.getElementById("goal-quiz-input").value, 10);
   const gl = parseInt(document.getElementById("goal-listen-input").value, 10);
   const gr = parseInt(document.getElementById("goal-read-input").value, 10);
+  const ts = parseInt(document.getElementById("target-score-input").value, 10);
   if (date) state.settings.examDate = date;
   if (gw >= 1) state.settings.goalWords = gw;
   if (gq >= 1) state.settings.goalQuiz = gq;
   if (gl >= 1) state.settings.goalListen = gl;
   if (gr >= 1) state.settings.goalRead = gr;
+  if (ts >= 10 && ts <= 990) state.settings.targetScore = ts;
   state.settings.sound = document.getElementById("sound-input").checked;
   state.settings.autoSpeak = document.getElementById("autospeak-input").checked;
   saveState();
