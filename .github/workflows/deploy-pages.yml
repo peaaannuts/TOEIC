@@ -1,0 +1,47 @@
+name: Deploy TOEIC app to GitHub Pages
+
+# main の toeic/ 配下が変わるたびに、toeic フォルダをサイトのルートとして
+# GitHub Pages へ自動デプロイする。手動実行(workflow_dispatch)も可能。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "toeic/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+# GitHub Pages へのデプロイに必要な権限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同時に走らないように直列化(古いデプロイは中断)
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          # Pages がまだ有効でなければ有効化を試みる(初回デプロイ用)
+          enablement: true
+
+      - name: Upload toeic/ as the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: toeic
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

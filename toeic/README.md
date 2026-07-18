@@ -48,17 +48,33 @@ npx serve .
 
 (`index.html` をダブルクリックして直接開いても動作しますが、その場合オフラインキャッシュは無効です)
 
-## スマートフォンで使う
+## スマートフォンで使う(GitHub Pagesで自動公開)
 
-スマホで使うにはインターネット上に公開するのが簡単です。無料の方法:
+このリポジトリには GitHub Pages への**自動デプロイ**が設定されています
+(`.github/workflows/deploy-pages.yml`)。`main` ブランチの `toeic/` 配下が
+更新されるたびに、`toeic/` フォルダがサイトのルートとして自動で公開されます。
 
-1. **Netlify Drop**(アカウント不要ですぐ試せる)
-   https://app.netlify.com/drop にこのフォルダをドラッグ&ドロップ → 発行されたURLをスマホで開く
-2. **GitHub Pages**
-   GitHubリポジトリにこのフォルダをプッシュ → Settings → Pages で公開
+- 公開URL: **https://peaaannuts.github.io/TOEIC/**
+- 更新方法: 変更を `main` にプッシュするだけ(数分でPagesに反映されます)
 
-スマホのブラウザで開いたら、**「ホーム画面に追加」** をすると
+### 初回だけ必要な設定
+
+リポジトリの **Settings → Pages → Build and deployment → Source** を
+**「GitHub Actions」** に設定してください(初回のワークフロー実行で自動的に
+有効化される場合もあります)。以降はプッシュするだけで更新されます。
+
+デプロイの状況は GitHub の **Actions** タブで確認できます。
+
+スマホのブラウザで公開URLを開いたら、**「ホーム画面に追加」** をすると
 アイコン付きの普通のアプリのように全画面で使えます(オフラインでも動作)。
+
+> 反映されないときは、アプリを一度閉じてから2回開き直すと新しいバージョンに更新されます
+> (Service Workerのキャッシュ更新のため)。
+
+#### 別の手段(任意)
+
+GitHubを使わずすぐ試したいときは **Netlify Drop**(https://app.netlify.com/drop )に
+`toeic` フォルダをドラッグ&ドロップしても公開できます。
 
 - iPhone (Safari): 共有ボタン → 「ホーム画面に追加」
 - Android (Chrome): メニュー → 「ホーム画面に追加」/「アプリをインストール」
