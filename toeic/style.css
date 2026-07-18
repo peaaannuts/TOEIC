@@ -855,3 +855,70 @@ dialog label.check-row input {
   color: #fff;
   cursor: not-allowed;
 }
+
+/* ---- 今週カード(ゴーストリーグ + 週間クエスト + 月間ミニ) ---- */
+.league-box { margin-bottom: 12px; }
+.league-heading { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--text); }
+.league-bar {
+  position: relative;
+  height: 14px;
+  background: var(--accent-light);
+  border-radius: 7px;
+  overflow: visible;
+}
+.league-bar-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #6ea9c9, #4a90c2);
+  border-radius: 7px;
+  transition: width 0.5s;
+}
+.league-bar-fill.ahead { background: linear-gradient(90deg, #35b37e, #2e9e6b); }
+.league-ghost-mark {
+  position: absolute;
+  top: -3px;
+  width: 0;
+  height: 20px;
+  border-left: 2px dashed var(--sub);
+  transform: translateX(-1px);
+}
+.league-ghost-mark::after {
+  content: "👤";
+  position: absolute;
+  top: -16px;
+  left: -8px;
+  font-size: 12px;
+}
+.league-text { margin: 8px 0 0; font-size: 12px; color: var(--sub); line-height: 1.5; }
+
+.weekly-sub {
+  margin: 6px 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  border-top: 1px solid #eef2f4;
+  padding-top: 10px;
+}
+
+.monthly-mini { margin-top: 12px; }
+.monthly-mini-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sub);
+  margin-bottom: 5px;
+}
+.mini-bar {
+  height: 10px;
+  background: var(--accent-light);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.mini-bar-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #d9a441, #e8b64f);
+  border-radius: 5px;
+  transition: width 0.5s;
+}
