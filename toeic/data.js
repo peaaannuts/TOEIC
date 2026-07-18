@@ -1205,6 +1205,41 @@ const READING = [
       { q: "What is indicated about all the workshops?", jq: "すべてのワークショップについて何が示されていますか?", c: ["They require advance registration.","They are free of charge.","They are held on weekdays.","They have no limit on participants."], a: 0, x: "案内に「Advance registration is required(事前登録が必要)」とあります。" },
     ],
   },
+  {
+    t: "オンラインレビュー",
+    passages: [
+      { label: "レビュー", text: "★★★★☆ Comfortable Stay, One Small Problem\nReviewed by: Thomas Reed  |  Posted: April 12\n\nI stayed at the Lakeside Grand Hotel for three nights during a business trip. The location was excellent — only a ten-minute walk from the convention center where my meetings were held. The staff at the front desk were friendly and checked me in quickly.\n\nThe room was spacious and spotless, and the bed was very comfortable. My only complaint is that the Wi-Fi in my room was too slow for video calls. When I mentioned this at the front desk, they kindly moved me to a room on a higher floor with a much stronger connection.\n\nBreakfast was included and offered a wide variety of dishes. I would happily recommend this hotel to other business travelers, though I hope the internet service is upgraded soon.", jtext: "★★★★☆ 快適な滞在、ひとつだけ難点\nレビュー者: トーマス・リード  |  投稿: 4月12日\n\n出張で3泊、レイクサイド・グランド・ホテルに滞在しました。立地は素晴らしく、会議が行われたコンベンションセンターから徒歩わずか10分でした。フロントのスタッフは親切で、チェックインも素早く済ませてくれました。\n\n部屋は広々として清潔で、ベッドはとても快適でした。唯一の不満は、部屋のWi-Fiがビデオ通話には遅すぎたことです。フロントでそれを伝えると、親切にも接続がずっと強い上層階の部屋へ移してくれました。\n\n朝食は料金に含まれ、種類も豊富でした。他の出張者にも喜んで勧めますが、インターネット環境が早く改善されることを願います。" },
+    ],
+    qs: [
+      { q: "Why did Mr. Reed stay at the hotel?", jq: "リードさんはなぜこのホテルに滞在したのですか?", c: ["For a business trip","For a family vacation","To attend a wedding","To visit relatives"], a: 0, x: "冒頭に「during a business trip(出張中)」とあります。" },
+      { q: "What problem did Mr. Reed experience?", jq: "リードさんはどんな問題を経験しましたか?", c: ["The Wi-Fi was too slow.","The room was not clean.","The staff were unfriendly.","Breakfast was not available."], a: 0, x: "「the Wi-Fi in my room was too slow for video calls(Wi-Fiが遅すぎた)」とあります。他の点はむしろ良かったと書かれています。" },
+      { q: "How did the hotel respond to his complaint?", jq: "ホテルは彼の苦情にどう対応しましたか?", c: ["It moved him to a different room.","It gave him a full refund.","It offered him free breakfast.","It canceled his reservation."], a: 0, x: "「moved me to a room on a higher floor(上層階の部屋へ移した)」とあります。" },
+    ],
+  },
+  {
+    t: "日程表",
+    passages: [
+      { label: "日程表", text: "Annual Sales Conference — Day 1 Schedule\nLocation: Westbrook Hotel\n\n9:00 A.M. – 9:30 A.M.   Registration and welcome coffee\n9:30 A.M. – 10:30 A.M.  Opening Keynote: \"Trends in Global Markets\" (Main Hall)\n10:30 A.M. – 10:45 A.M. Morning break\n10:45 A.M. – 12:00 P.M. Workshop: Effective Sales Techniques (Room 2A)\n12:00 P.M. – 1:00 P.M.  Lunch (Garden Restaurant)\n1:00 P.M. – 3:00 P.M.   Group discussions by region\n3:00 P.M. – 3:30 P.M.   Closing remarks (Main Hall)\n\nNote: Please wear your name badge at all times during the conference. Presentation slides will be e-mailed to all participants after the event.", jtext: "年次営業会議 — 1日目の日程\n会場: ウェストブルック・ホテル\n\n午前9:00〜9:30    受付とウェルカムコーヒー\n午前9:30〜10:30   開会基調講演「世界市場の動向」(メインホール)\n午前10:30〜10:45  午前の休憩\n午前10:45〜午後0:00 ワークショップ「効果的な営業手法」(2A号室)\n午後0:00〜1:00    昼食(ガーデンレストラン)\n午後1:00〜3:00    地域別グループ討議\n午後3:00〜3:30    閉会の挨拶(メインホール)\n\n注: 会議中は常に名札を着用してください。発表スライドは終了後に全参加者へメールで送られます。" },
+    ],
+    qs: [
+      { q: "Where will the opening keynote be held?", jq: "開会の基調講演はどこで行われますか?", c: ["In the Main Hall","In Room 2A","In the Garden Restaurant","At the registration desk"], a: 0, x: "日程表に「Opening Keynote ... (Main Hall)」とあります。" },
+      { q: "What are participants asked to do?", jq: "参加者は何をするよう求められていますか?", c: ["Wear a name badge at all times","Bring their own lunch","Prepare a presentation","Arrive before 8:00 A.M."], a: 0, x: "注記に「wear your name badge at all times(常に名札を着用)」とあります。" },
+      { q: "What will happen after the event?", jq: "イベント後に何が起きますか?", c: ["Slides will be e-mailed to participants.","Certificates will be mailed.","A survey will be handed out.","A second day will be added."], a: 0, x: "「Presentation slides will be e-mailed to all participants after the event(スライドが後日メールされる)」とあります。" },
+    ],
+  },
+  {
+    t: "ダブルパッセージ",
+    passages: [
+      { label: "お知らせ", text: "NOTICE: Software Training Sessions\n\nGreenline Corporation will hold training sessions for our new accounting software next week. Each session covers exactly the same material, so employees only need to attend one.\n\n- Session A: Monday, 2:00 P.M., Room 301\n- Session B: Wednesday, 10:00 A.M., Room 305\n- Session C: Friday, 3:00 P.M., Room 301\n\nPlease sign up by Thursday of this week. Each session is limited to 20 participants. Laptops will be provided, so there is no need to bring your own.", jtext: "お知らせ: ソフトウェア研修\n\nグリーンライン社は来週、新しい会計ソフトの研修を行います。各回はまったく同じ内容なので、社員はいずれか1回に出席すれば十分です。\n\n・セッションA: 月曜 午後2時、301号室\n・セッションB: 水曜 午前10時、305号室\n・セッションC: 金曜 午後3時、301号室\n\n今週の木曜までに申し込んでください。各回の定員は20名です。ノートパソコンは貸与されるので、持参の必要はありません。" },
+      { label: "Eメール", text: "To: Training Coordinator\nFrom: Nina Patel\nSubject: Session Change\nDate: Monday morning\n\nHello,\n\nI originally signed up for the Monday afternoon session, but a client meeting has just been scheduled at the same time. Could I switch to the Wednesday morning session instead? Please let me know if a spot is still available.\n\nAlso, do I need to bring anything to the session, or will everything be provided?\n\nThank you,\nNina Patel", jtext: "宛先: 研修担当者\n差出人: ニーナ・パテル\n件名: セッションの変更\n日付: 月曜の朝\n\nこんにちは\n\n元々は月曜午後のセッションに申し込んでいましたが、同じ時間に顧客との会議が入ってしまいました。代わりに水曜午前のセッションに変更できますか?まだ空きがあるか教えてください。\n\nまた、セッションに何か持参する必要はありますか、それともすべて用意されますか?\n\nよろしくお願いします\nニーナ・パテル" },
+    ],
+    qs: [
+      { q: "What does the notice ask employees to do by Thursday?", jq: "お知らせは木曜までに社員に何をするよう求めていますか?", c: ["Sign up for a session","Finish the training","Bring their own laptop","Install the software"], a: 0, x: "「Please sign up by Thursday of this week(今週木曜までに申し込む)」とあります。" },
+      { q: "What is stated about the three sessions?", jq: "3つのセッションについて何が述べられていますか?", c: ["They all cover the same material.","They are held in the same room.","They each last two days.","They require a fee."], a: 0, x: "「Each session covers exactly the same material(各回は同じ内容)」とあります。" },
+      { q: "Which session does Ms. Patel now want to attend?", jq: "パテルさんは今どのセッションに出席したいのですか?", c: ["Session B","Session A","Session C","None of them"], a: 0, x: "メールの「Wednesday morning session(水曜午前)」は、お知らせのセッションB(水曜午前10時)にあたります。2つの文書を照合して答えます。" },
+      { q: "What does Ms. Patel ask about?", jq: "パテルさんは何について尋ねていますか?", c: ["Whether she needs to bring anything","The cost of the training","Where her client meeting is","How to use the software"], a: 0, x: "メール末尾で「do I need to bring anything(何か持参する必要があるか)」と尋ねています。" },
+    ],
+  },
 ];
 
 // PART6: Part 6形式(長文穴埋め)。text内の {1}..{4} が空所。各設問 qs[n] が空所(n+1)に対応。

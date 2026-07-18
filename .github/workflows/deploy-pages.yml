@@ -1,10 +1,13 @@
 name: Deploy TOEIC app to GitHub Pages
 
-# main の toeic/ 配下が変わるたびに、toeic フォルダをサイトのルートとして
-# GitHub Pages へ自動デプロイする。手動実行(workflow_dispatch)も可能。
+# main または開発ブランチの toeic/ 配下が変わるたびに、toeic フォルダをサイトの
+# ルートとして GitHub Pages へ自動デプロイする(mergeしなくても公開URLに反映される)。
+# 手動実行(workflow_dispatch)も可能。
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - claude/toeic-app-dev-st2txs
     paths:
       - "toeic/**"
       - ".github/workflows/deploy-pages.yml"
