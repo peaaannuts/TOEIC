@@ -8,6 +8,15 @@ const MAX_LEVEL = INTERVALS.length - 1;
 const MASTERED_LEVEL = 3; // このレベル以上を「習得」とみなす
 const QUIZ_SET_SIZE = 10;
 
+// ---- ストリーク & 通貨(継続の仕組み) ----
+const FREEZE_MAX = 2;           // ❄️フリーズの最大ストック数
+const FREEZE_COST = 200;        // ショップでのフリーズ購入価格(💎)
+// ストリーク節目: 到達で紙吹雪+ボーナスジェム。7の倍数の節目ではフリーズも1個無料付与
+const STREAK_MILESTONES = [
+  { days: 3, gems: 20 }, { days: 7, gems: 40 }, { days: 14, gems: 60 },
+  { days: 30, gems: 100 }, { days: 50, gems: 150 }, { days: 100, gems: 300 },
+];
+
 // ---- 状態 ----
 
 function defaultState() {
@@ -20,6 +29,11 @@ function defaultState() {
     readStats: {},   // Part 7文書セットindex -> { lv, next, seen, ok }(セット全問正解でレベルUP)
     part6Stats: {},  // Part 6長文index -> { lv, next, seen, ok }(同上)
     xp: 0,           // 累計XP(レベルはここから算出)
+    gems: 0,         // 💎ジェム(宿題ではなくメタ通貨。ショップでフリーズ等と交換)
+    freezes: 0,      // ❄️ストリークフリーズの在庫(最大FREEZE_MAX)。休んだ日を自動で埋める
+    streak: { count: 0, lastActive: "", best: 0 }, // 連続学習日(フリーズを考慮して維持)
+    freezeLog: [],   // フリーズで埋めた日付(表示・重複防止用、直近のみ保持)
+    streakMilestones: [], // 祝福済みのストリーク節目(重複祝福を防ぐ)
     goalDone: "",    // ノルマ全達成を祝った日(1日1回だけ祝う)
     daily: null,     // { date, claimed: [id...] } デイリーチャレンジの達成記録
     badges: [],      // 解除済み実績のid
@@ -52,6 +66,11 @@ function loadState() {
         }
       });
     });
+    // ストリーク機能の導入前ユーザー: これまでのログから連続日数を復元して引き継ぐ
+    if (!merged.streak || merged.streak.lastActive === "") {
+      const derived = calcStreakFromLog(merged.log);
+      merged.streak = { count: derived.count, lastActive: derived.lastActive, best: derived.count };
+    }
     return merged;
   } catch {
     return defaultState();
@@ -382,6 +401,7 @@ function ensureDaily() {
 
 // 達成した瞬間にボーナスXPとバナーで報酬を出す(学習アクションのたびに呼ぶ)
 function checkDailyChallenges() {
+  touchStreak(); // 学習アクション=今日活動した、として連続記録を更新
   const daily = ensureDaily();
   const log = state.log[todayKey()];
   if (!log) return;
@@ -393,6 +413,7 @@ function checkDailyChallenges() {
       state.dailyDoneCount = (state.dailyDoneCount || 0) + 1;
       addXp(c.xp);
       showBanner(`🏅 チャレンジ達成! +${c.xp}XP`);
+      openChest(c.xp); // 達成報酬は宝箱でジェムを獲得(変動報酬)
       changed = true;
     }
   });
@@ -432,20 +453,166 @@ document.querySelectorAll("[data-goto]").forEach((b) => {
 
 // ---- ホーム ----
 
-function calcStreak() {
-  let streak = 0;
+// 2つの日付キー間の日数(b - a)
+function daysBetween(a, b) {
+  const [ay, am, ad] = a.split("-").map(Number);
+  const [by, bm, bd] = b.split("-").map(Number);
+  return Math.round((new Date(by, bm - 1, bd) - new Date(ay, am - 1, ad)) / 86400000);
+}
+
+// 今日すでに学習したか
+function todayActive() {
+  return logTotal(state.log[todayKey()]) > 0;
+}
+
+// ログのみから連続学習日を求める(ストリーク機能導入前の記録の移行・保険用)
+function calcStreakFromLog(log) {
+  let count = 0;
   let k = todayKey();
-  // 今日まだ学習していなくても昨日までの連続は保つ
-  if (logTotal(state.log[k]) === 0) k = addDays(k, -1);
-  while (logTotal(state.log[k]) > 0) {
-    streak++;
-    k = addDays(k, -1);
+  if (logTotal(log[k]) === 0) k = addDays(k, -1); // 今日未学習でも昨日までの連続は保つ
+  const lastActive = logTotal(log[k]) > 0 ? k : "";
+  while (logTotal(log[k]) > 0) { count++; k = addDays(k, -1); }
+  return { count, lastActive };
+}
+
+// 表示用: 維持しているストリーク値を返す
+function calcStreak() {
+  return (state.streak && state.streak.count) || 0;
+}
+
+// 学習アクションのたびに呼ぶ。今日を「活動日」として連続記録を更新する。
+// 空いた日はフリーズ(お守り)で自動的に埋め、足りなければリセットする。
+function touchStreak() {
+  const today = todayKey();
+  const s = state.streak;
+  if (s.lastActive === today) return; // 今日はもう計上済み
+
+  if (s.lastActive === "") {
+    s.count = 1;
+  } else {
+    const gap = daysBetween(s.lastActive, today); // 1なら連続、2以上は間が空いた
+    if (gap <= 1) {
+      s.count += 1;
+    } else {
+      const missed = gap - 1; // 埋めるべき欠席日数
+      if (state.freezes >= missed) {
+        // フリーズで全部埋める → 連続維持(埋めた日はカウントには足さない=Duolingo方式)
+        state.freezes -= missed;
+        for (let i = 1; i <= missed; i++) state.freezeLog.push(addDays(s.lastActive, i));
+        if (state.freezeLog.length > 30) state.freezeLog = state.freezeLog.slice(-30);
+        s.count += 1;
+        showBanner(`❄️ お守りで連続記録を守りました(${missed}日分)`);
+      } else {
+        s.count = 1; // 守りきれず途切れた
+      }
+    }
   }
-  return streak;
+  s.lastActive = today;
+  s.best = Math.max(s.best || 0, s.count);
+  checkStreakMilestones();
+  saveState();
+}
+
+// ストリークの節目を祝う(到達済みは記録して二度は祝わない)
+function checkStreakMilestones() {
+  STREAK_MILESTONES.forEach((m) => {
+    if (state.streak.count < m.days) return;
+    if (state.streakMilestones.includes(m.days)) return;
+    state.streakMilestones.push(m.days);
+    addGems(m.gems);
+    // 7日ごとの節目ではフリーズも1個プレゼント(課金なしでも継続を守れるように)
+    let extra = "";
+    if (m.days % 7 === 0 && state.freezes < FREEZE_MAX) {
+      state.freezes = Math.min(FREEZE_MAX, state.freezes + 1);
+      extra = " ・ ❄️お守り+1";
+    }
+    confetti();
+    seLevelUp();
+    showBanner(`🔥 ${m.days}日連続達成! +${m.gems}💎${extra}`);
+  });
+}
+
+// ---- ジェム & 宝箱 & ショップ ----
+
+function addGems(n) {
+  state.gems = Math.max(0, (state.gems || 0) + n);
+}
+
+// デイリーチャレンジ達成時に開ける宝箱。ランダムなジェム量(変動報酬)。
+// チャレンジのXP帯で宝箱のグレードが変わる。金の宝箱はたまにXPも上乗せ。
+function openChest(challengeXp) {
+  let tier, min, max, icon;
+  if (challengeXp >= 45) { tier = "gold"; min = 30; max = 50; icon = "🎁"; }
+  else if (challengeXp >= 35) { tier = "silver"; min = 20; max = 35; icon = "🎁"; }
+  else { tier = "bronze"; min = 10; max = 20; icon = "🎁"; }
+  const gems = min + Math.floor(Math.random() * (max - min + 1));
+  addGems(gems);
+  let bonusXp = 0;
+  if (tier === "gold" && Math.random() < 0.4) {
+    bonusXp = 15;
+    addXp(bonusXp); // 金の宝箱の“当たり”
+  }
+  showBanner(`${icon} 宝箱! +${gems}💎${bonusXp ? ` +${bonusXp}XP` : ""}`);
+}
+
+// ショップ: フリーズを購入
+function buyFreeze() {
+  if (state.freezes >= FREEZE_MAX) { showBanner(`❄️ お守りは最大${FREEZE_MAX}個までです`); return; }
+  if ((state.gems || 0) < FREEZE_COST) { showBanner(`💎が足りません(${FREEZE_COST}必要)`); return; }
+  addGems(-FREEZE_COST);
+  state.freezes = Math.min(FREEZE_MAX, state.freezes + 1);
+  saveState();
+  seLevelUp();
+  showBanner(`❄️ お守りを購入しました(残り${state.gems}💎)`);
+  renderShop();
+  renderHome();
 }
 
 function countMastered() {
   return Object.values(state.words).filter((w) => w.lv >= MASTERED_LEVEL).length;
+}
+
+// 次に到達するストリーク節目を返す(なければnull)
+function nextMilestone() {
+  return STREAK_MILESTONES.find((m) => m.days > calcStreak()) || null;
+}
+
+// ホーム最上部の炎ヒーロー(継続の主役)。今日未達成なら炎をグレーにして行動を促す。
+function renderStreakHero() {
+  const active = todayActive();
+  const count = calcStreak();
+  const flame = document.getElementById("streak-flame");
+  const hero = document.getElementById("streak-hero");
+  flame.textContent = "🔥"; // 未達成時は .dim でグレーアウト(下のCSS)
+  flame.classList.toggle("dim", !active);
+  hero.classList.toggle("active", active);
+  document.getElementById("streak-count").textContent = count;
+  document.getElementById("gem-count").textContent = state.gems || 0;
+  document.getElementById("freeze-count").textContent = state.freezes || 0;
+
+  const msg = document.getElementById("streak-message");
+  if (count === 0) {
+    msg.textContent = "今日から学習して炎を灯そう🔥";
+  } else if (!active) {
+    msg.textContent = `連続${count}日! 今日学習しないと途切れます${state.freezes > 0 ? "(❄️お守りで自動で守られます)" : ""}`;
+  } else {
+    const nm = nextMilestone();
+    msg.textContent = nm ? `連続${count}日! 次の節目まであと${nm.days - count}日で+${nm.gems}💎` : `連続${count}日! 自己ベスト更新中🏆`;
+  }
+}
+
+// ---- ショップ ----
+
+function renderShop() {
+  const dlg = document.getElementById("shop-dialog");
+  if (!dlg) return;
+  document.getElementById("shop-gems").textContent = state.gems || 0;
+  document.getElementById("shop-freeze-stock").textContent = `${state.freezes || 0} / ${FREEZE_MAX}`;
+  const btn = document.getElementById("shop-buy-freeze");
+  const full = state.freezes >= FREEZE_MAX;
+  const poor = (state.gems || 0) < FREEZE_COST;
+  btn.disabled = full || poor;
+  btn.textContent = full ? "在庫が最大です" : `${FREEZE_COST}💎 で購入`;
 }
 
 // ---- 推定スコア ----
@@ -555,6 +722,7 @@ function renderHome() {
     msg.textContent = "";
   }
 
+  renderStreakHero();
   document.getElementById("stat-streak").textContent = calcStreak();
   document.getElementById("stat-mastered").textContent = countMastered();
 
@@ -1951,6 +2119,15 @@ document.getElementById("settings-btn").addEventListener("click", () => {
   settingsDialog.showModal();
 });
 
+// ---- ショップ(炎ヒーローのカードから開く) ----
+const shopDialog = document.getElementById("shop-dialog");
+document.getElementById("streak-hero").addEventListener("click", () => {
+  renderShop();
+  shopDialog.showModal();
+});
+document.getElementById("shop-buy-freeze").addEventListener("click", buyFreeze);
+document.getElementById("shop-close-btn").addEventListener("click", () => shopDialog.close());
+
 document.getElementById("settings-save-btn").addEventListener("click", () => {
   const date = document.getElementById("exam-date-input").value;
   const gw = parseInt(document.getElementById("goal-words-input").value, 10);
@@ -1981,6 +2158,11 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   state.readStats = {};
   state.part6Stats = {};
   state.log = {};
+  state.gems = 0;
+  state.freezes = 0;
+  state.streak = { count: 0, lastActive: "", best: 0 };
+  state.freezeLog = [];
+  state.streakMilestones = [];
   saveState();
   settingsDialog.close();
   showTab("home");

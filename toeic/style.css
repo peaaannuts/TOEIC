@@ -776,3 +776,82 @@ dialog label.check-row input {
   box-sizing: border-box;
 }
 .backup-paste .secondary-btn { width: 100%; flex: none; }
+
+/* ---- ストリーク・ヒーロー(ホーム最上部) ---- */
+.streak-hero {
+  background: linear-gradient(135deg, #ff9d3d 0%, #ff7a3d 55%, #f4603c 100%);
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  padding: 18px 16px 14px;
+}
+.streak-hero.active { box-shadow: 0 3px 16px rgba(244, 96, 60, 0.38); }
+.streak-hero:active { transform: scale(0.99); }
+.streak-flame-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.streak-flame {
+  font-size: 46px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: filter 0.3s;
+}
+.streak-flame.dim { filter: grayscale(1) opacity(0.55); }
+.streak-count-wrap { display: flex; align-items: baseline; gap: 4px; }
+.streak-count { font-size: 44px; font-weight: 800; letter-spacing: 1px; }
+.streak-days { font-size: 15px; font-weight: 700; opacity: 0.95; }
+.streak-message {
+  margin: 8px 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.97;
+}
+.streak-wallet {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.wallet-item {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.wallet-shop {
+  background: #fff;
+  color: #f4603c;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* ---- ショップ ---- */
+.shop-balance { margin: 0 0 4px; font-size: 15px; }
+.shop-note { margin: 0 0 14px; font-size: 12px; color: var(--sub); line-height: 1.5; }
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e2e9ec;
+  border-radius: var(--radius);
+}
+.shop-item-icon { font-size: 30px; line-height: 1; }
+.shop-item-body { flex: 1; min-width: 0; }
+.shop-item-name { margin: 0 0 2px; font-size: 14px; font-weight: 700; }
+.shop-item-desc { margin: 0 0 4px; font-size: 12px; color: var(--sub); line-height: 1.45; }
+.shop-item-stock { margin: 0; font-size: 12px; color: var(--accent); font-weight: 700; }
+.shop-item .primary-btn { flex: none; white-space: nowrap; }
+.shop-item .primary-btn:disabled {
+  background: #cfd8dc;
+  color: #fff;
+  cursor: not-allowed;
+}
