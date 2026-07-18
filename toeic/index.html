@@ -20,6 +20,19 @@
 
   <!-- ホームタブ -->
   <section id="tab-home" class="tab-page">
+    <div class="card streak-hero" id="streak-hero" role="button" tabindex="0" aria-label="ストリークとショップ">
+      <div class="streak-flame-wrap">
+        <span class="streak-flame" id="streak-flame">🔥</span>
+        <span class="streak-count-wrap"><span class="streak-count" id="streak-count">0</span><span class="streak-days">日連続</span></span>
+      </div>
+      <p class="streak-message" id="streak-message"></p>
+      <div class="streak-wallet">
+        <span class="wallet-item" title="ストリークのお守り">❄️ <span id="freeze-count">0</span></span>
+        <span class="wallet-item" title="ジェム">💎 <span id="gem-count">0</span></span>
+        <span class="wallet-shop">🛒 ショップ</span>
+      </div>
+    </div>
+
     <div class="card countdown-card">
       <p class="countdown-label">試験まで</p>
       <p class="countdown-days"><span id="countdown-num">--</span><span class="countdown-unit">日</span></p>
@@ -457,6 +470,28 @@
       <button type="submit" class="primary-btn" id="settings-save-btn">保存</button>
     </div>
   </form>
+</dialog>
+
+<!-- ショップダイアログ -->
+<dialog id="shop-dialog">
+  <h2>🛒 ショップ</h2>
+  <p class="shop-balance">所持ジェム: <strong id="shop-gems">0</strong> 💎</p>
+  <p class="shop-note">ジェムはデイリーチャレンジの宝箱や、連続学習の節目でもらえます。</p>
+
+  <div class="shop-item">
+    <div class="shop-item-icon">❄️</div>
+    <div class="shop-item-body">
+      <p class="shop-item-name">ストリークのお守り</p>
+      <p class="shop-item-desc">学習を1日休んでも連続記録が途切れません。空いた日を自動で埋めます。</p>
+      <p class="shop-item-stock">在庫: <span id="shop-freeze-stock">0 / 2</span></p>
+    </div>
+    <button type="button" class="primary-btn" id="shop-buy-freeze">200💎 で購入</button>
+  </div>
+
+  <div class="dialog-actions">
+    <span class="spacer"></span>
+    <button type="button" class="secondary-btn" id="shop-close-btn">閉じる</button>
+  </div>
 </dialog>
 
 <nav class="tab-bar">
