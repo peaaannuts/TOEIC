@@ -17,6 +17,30 @@ const STREAK_MILESTONES = [
   { days: 30, gems: 100 }, { days: 50, gems: 150 }, { days: 100, gems: 300 },
 ];
 
+// 週間クエスト: 週替わりで3つ。日で完結しない目標線を張る(1週間=月曜〜日曜)
+const WEEKLY_POOL = [
+  { id: "w_words", label: "単語を120枚学習する", xp: 60, gems: 40, target: 120, progress: (a) => a.words },
+  { id: "w_quiz", label: "文法を80問解く", xp: 60, gems: 40, target: 80, progress: (a) => a.quiz },
+  { id: "w_listen", label: "リスニングを80問解く", xp: 60, gems: 40, target: 80, progress: (a) => a.listen },
+  { id: "w_read", label: "読解を24問解く", xp: 60, gems: 40, target: 24, progress: (a) => a.read },
+  { id: "w_correct", label: "文法で60問正解する", xp: 70, gems: 50, target: 60, progress: (a) => a.correct },
+  { id: "w_listenok", label: "リスニングで50問正解する", xp: 70, gems: 50, target: 50, progress: (a) => a.listenOk },
+  { id: "w_days5", label: "5日学習する", xp: 80, gems: 60, target: 5, progress: (a) => a.activeDays },
+];
+const WEEKLY_WIN_GEMS = 50;  // ゴーストリーグで先週の自分に勝ったときのボーナス💎
+
+// 月間バッジ: その月にクエストポイント(デイリー/週間クエスト達成)を規定数ためると獲得
+const MONTHLY_TARGET = 40;
+const MONTHLY_BADGE_GEMS = 100;
+// 月ごとの限定バッジ(季節モチーフ)。index=月(1..12)
+const MONTHLY_THEMES = [
+  null,
+  { icon: "❄️", name: "雪の勲章" }, { icon: "💝", name: "ハートの勲章" }, { icon: "🌸", name: "桜の勲章" },
+  { icon: "🌱", name: "新芽の勲章" }, { icon: "🎏", name: "こいのぼりの勲章" }, { icon: "☔", name: "あじさいの勲章" },
+  { icon: "🎆", name: "花火の勲章" }, { icon: "🌻", name: "ひまわりの勲章" }, { icon: "🍁", name: "紅葉の勲章" },
+  { icon: "🎃", name: "かぼちゃの勲章" }, { icon: "🍂", name: "落ち葉の勲章" }, { icon: "🎄", name: "聖夜の勲章" },
+];
+
 // ---- 状態 ----
 
 function defaultState() {
@@ -34,6 +58,10 @@ function defaultState() {
     streak: { count: 0, lastActive: "", best: 0 }, // 連続学習日(フリーズを考慮して維持)
     freezeLog: [],   // フリーズで埋めた日付(表示・重複防止用、直近のみ保持)
     streakMilestones: [], // 祝福済みのストリーク節目(重複祝福を防ぐ)
+    weekly: { week: "", claimed: [] }, // 今週の週間クエスト達成記録(週替わり)
+    monthly: { ym: "", points: 0 },    // 今月のクエストポイント(月間バッジ用、月替わり)
+    monthlyBadges: [],                 // 獲得した月間バッジ [{ ym, icon, name }]
+    league: { week: "", xp: 0, prevXp: 0, pendingResult: null }, // 先週の自分とのXP対戦
     goalDone: "",    // ノルマ全達成を祝った日(1日1回だけ祝う)
     daily: null,     // { date, claimed: [id...] } デイリーチャレンジの達成記録
     badges: [],      // 解除済み実績のid
@@ -236,6 +264,8 @@ function addXp(n) {
   const before = levelInfo(state.xp).level;
   state.xp += n;
   sessionXp += n;
+  ensureLeagueWeek();          // 週が変わっていたら繰り越し
+  state.league.xp += n;        // 今週のXP(先週の自分との対戦用)
   const after = levelInfo(state.xp).level;
   if (after > before) celebrateLevelUp(after);
 }
@@ -414,11 +444,129 @@ function checkDailyChallenges() {
       addXp(c.xp);
       showBanner(`🏅 チャレンジ達成! +${c.xp}XP`);
       openChest(c.xp); // 達成報酬は宝箱でジェムを獲得(変動報酬)
+      addMonthlyPoints(1); // 月間バッジ用のポイント
       changed = true;
     }
   });
   if (changed) saveState();
+  checkWeeklyQuests(); // 週間クエストの達成も判定する
   checkBadges(); // 学習アクションのたびに実績も判定する
+}
+
+// ---- 週間クエスト / 月間バッジ / ゴーストリーグ(週・月の長い目標線) ----
+
+// その週の月曜日の日付キーを返す(1週間=月曜〜日曜)
+function weekKey(baseKey) {
+  const base = baseKey || todayKey();
+  const [y, m, d] = base.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const offset = (dt.getDay() + 6) % 7; // 月曜=0 ... 日曜=6
+  dt.setDate(dt.getDate() - offset);
+  return dateKey(dt);
+}
+
+// 今週(月〜日)のログを集計して週間クエストの進捗に使う
+function weekAggregate() {
+  const start = weekKey();
+  const a = { words: 0, quiz: 0, correct: 0, listen: 0, listenOk: 0, read: 0, readOk: 0, activeDays: 0 };
+  for (let i = 0; i < 7; i++) {
+    const l = state.log[addDays(start, i)];
+    if (!l) continue;
+    a.words += l.words; a.quiz += l.quiz; a.correct += l.correct;
+    a.listen += l.listen || 0; a.listenOk += l.listenOk || 0;
+    a.read += l.read || 0; a.readOk += l.readOk || 0;
+    if (logTotal(l) > 0) a.activeDays++;
+  }
+  return a;
+}
+
+// 今週の週間クエスト3つを週から決定的に選ぶ(その週はずっと同じ)
+function weeklyQuests() {
+  let seed = 0;
+  for (const ch of weekKey()) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  const pool = [...WEEKLY_POOL];
+  const picks = [];
+  for (let i = 0; i < 3; i++) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    picks.push(pool.splice(seed % pool.length, 1)[0]);
+  }
+  return picks;
+}
+
+function ensureWeekly() {
+  const wk = weekKey();
+  if (!state.weekly || state.weekly.week !== wk) state.weekly = { week: wk, claimed: [] };
+  return state.weekly;
+}
+
+function checkWeeklyQuests() {
+  const wq = ensureWeekly();
+  const agg = weekAggregate();
+  let changed = false;
+  weeklyQuests().forEach((q) => {
+    if (wq.claimed.includes(q.id)) return;
+    if (q.progress(agg) >= q.target) {
+      wq.claimed.push(q.id);
+      addXp(q.xp);
+      addGems(q.gems);
+      addMonthlyPoints(1);
+      confetti();
+      showBanner(`🗓️ 週間クエスト達成! +${q.xp}XP +${q.gems}💎`);
+      changed = true;
+    }
+  });
+  if (changed) saveState();
+}
+
+// ---- 月間バッジ ----
+
+function ensureMonth() {
+  const ym = todayKey().slice(0, 7);
+  if (!state.monthly || state.monthly.ym !== ym) state.monthly = { ym, points: 0 };
+  return state.monthly;
+}
+
+function addMonthlyPoints(n) {
+  const m = ensureMonth();
+  m.points += n;
+  checkMonthlyBadge();
+}
+
+function monthlyBadgeFor(ym) {
+  const mo = Number(ym.slice(5, 7));
+  const t = MONTHLY_THEMES[mo] || { icon: "🏅", name: "月間の勲章" };
+  return { ym, icon: t.icon, name: `${mo}月・${t.name}` };
+}
+
+function checkMonthlyBadge() {
+  const m = ensureMonth();
+  if (m.points < MONTHLY_TARGET) return;
+  if (state.monthlyBadges.some((b) => b.ym === m.ym)) return;
+  const badge = monthlyBadgeFor(m.ym);
+  state.monthlyBadges.push(badge);
+  addGems(MONTHLY_BADGE_GEMS);
+  confetti();
+  seLevelUp();
+  showBanner(`🏆 ${badge.name} バッジ獲得! +${MONTHLY_BADGE_GEMS}💎`);
+  saveState();
+}
+
+// ---- ゴーストリーグ(先週の自分とのXP対戦) ----
+
+// 週が変わったら先週のXP合計を「先週の自分(ghost)」として確定し、今週分をリセットする
+function ensureLeagueWeek() {
+  const wk = weekKey();
+  const lg = state.league;
+  if (lg.week === wk) return;
+  if (lg.week === "") {
+    lg.week = wk; lg.xp = 0; lg.prevXp = 0; // 初週はゴーストなし
+    return;
+  }
+  // 終わった週の結果を1回だけ祝うために保留しておく(renderで消費)
+  lg.pendingResult = { xp: lg.xp, ghost: lg.prevXp };
+  lg.prevXp = lg.xp;
+  lg.xp = 0;
+  lg.week = wk;
 }
 
 // ---- タブ切り替え ----
@@ -615,6 +763,105 @@ function renderShop() {
   btn.textContent = full ? "在庫が最大です" : `${FREEZE_COST}💎 で購入`;
 }
 
+// ---- ホーム「今週」カードの描画(ゴーストリーグ + 週間クエスト + 月間ミニ) ----
+
+function renderLeague() {
+  ensureLeagueWeek();
+  const lg = state.league;
+  // 週明けの結果を1回だけ祝う
+  if (lg.pendingResult) {
+    const r = lg.pendingResult;
+    lg.pendingResult = null;
+    if (r.ghost > 0 && r.xp >= r.ghost) {
+      confetti();
+      addGems(WEEKLY_WIN_GEMS);
+      showBanner(`🏁 先週の自分に勝利! +${WEEKLY_WIN_GEMS}💎`);
+    } else if (r.ghost > 0) {
+      showBanner(`🏁 先週は ${r.ghost}XP。今週こそ超えよう!`);
+    }
+    saveState();
+  }
+  const cur = lg.xp || 0;
+  const ghost = lg.prevXp || 0;
+  const bar = document.getElementById("league-bar-fill");
+  const ghostMark = document.getElementById("league-ghost-mark");
+  const txt = document.getElementById("league-text");
+  if (ghost <= 0) {
+    bar.style.width = `${Math.min(100, cur === 0 ? 4 : 100)}%`;
+    ghostMark.style.display = "none";
+    txt.textContent = `今週 ${cur}XP ・ まずは1週間の記録を作ろう!`;
+    return;
+  }
+  const maxV = Math.max(cur, ghost);
+  bar.style.width = `${Math.max(4, (cur / maxV) * 100)}%`;
+  ghostMark.style.display = "block";
+  ghostMark.style.left = `${(ghost / maxV) * 100}%`;
+  bar.classList.toggle("ahead", cur >= ghost);
+  txt.textContent = cur >= ghost
+    ? `今週 ${cur}XP / 先週 ${ghost}XP ・ 先週の自分を超えた!🎉`
+    : `今週 ${cur}XP / 先週 ${ghost}XP ・ あと ${ghost - cur}XPで先週超え`;
+}
+
+function renderWeekly() {
+  const wq = ensureWeekly();
+  const agg = weekAggregate();
+  const list = document.getElementById("weekly-list");
+  list.innerHTML = "";
+  weeklyQuests().forEach((q) => {
+    const done = wq.claimed.includes(q.id);
+    const prog = Math.min(q.progress(agg), q.target);
+    const row = document.createElement("div");
+    row.className = "daily-row" + (done ? " done" : "");
+    row.innerHTML =
+      `<span class="daily-check">${done ? "✅" : "⬜"}</span>` +
+      `<span class="daily-label">${q.label}</span>` +
+      `<span class="daily-prog">${done ? "達成!" : `${prog} / ${q.target}`}</span>` +
+      `<span class="daily-xp">+${q.gems}💎</span>`;
+    list.appendChild(row);
+  });
+}
+
+function renderMonthlyMini() {
+  const m = ensureMonth();
+  const pts = Math.min(m.points, MONTHLY_TARGET);
+  const mo = Number(m.ym.slice(5, 7));
+  const owned = state.monthlyBadges.some((b) => b.ym === m.ym);
+  const el = document.getElementById("monthly-mini");
+  el.innerHTML =
+    `<div class="monthly-mini-head"><span>🏆 ${mo}月のバッジ</span>` +
+    `<span>${owned ? "獲得済み🎉" : `${pts} / ${MONTHLY_TARGET}`}</span></div>` +
+    `<div class="mini-bar"><div class="mini-bar-fill" style="width:${(pts / MONTHLY_TARGET) * 100}%"></div></div>`;
+}
+
+// ---- 記録タブ: 月間バッジのコレクション ----
+
+function renderMonthlyBadges() {
+  const m = ensureMonth();
+  const pts = Math.min(m.points, MONTHLY_TARGET);
+  const owned = state.monthlyBadges.some((b) => b.ym === m.ym);
+  document.getElementById("monthly-progress-text").textContent = owned
+    ? `今月のバッジは獲得済み!(クエスト ${m.points} 達成)`
+    : `今月のバッジまで クエスト ${pts} / ${MONTHLY_TARGET}(デイリー・週間クエストの達成で貯まります)`;
+  document.getElementById("monthly-bar-fill").style.width = `${(pts / MONTHLY_TARGET) * 100}%`;
+
+  const grid = document.getElementById("monthly-badge-grid");
+  grid.innerHTML = "";
+  const badges = [...state.monthlyBadges].sort((a, b) => a.ym.localeCompare(b.ym));
+  if (badges.length === 0) {
+    grid.innerHTML = `<p class="empty-note">まだ月間バッジはありません。今月クエストを${MONTHLY_TARGET}回達成すると最初のバッジがもらえます。</p>`;
+    return;
+  }
+  badges.forEach((b) => {
+    const item = document.createElement("div");
+    item.className = "badge-item";
+    item.innerHTML =
+      `<div class="badge-icon">${b.icon}</div>` +
+      `<div class="badge-name">${b.name}</div>` +
+      `<div class="badge-desc">${b.ym}</div>`;
+    grid.appendChild(item);
+  });
+}
+
 // ---- 推定スコア ----
 // アプリの演習成績(正答率)からTOEIC L&Rの目安スコアを推定する。
 // リスニング=Part1+Part2、リーディング=文法(Part5)+読解(Part7)+単語(語彙は基礎として軽め重み)。
@@ -723,6 +970,9 @@ function renderHome() {
   }
 
   renderStreakHero();
+  renderLeague();
+  renderWeekly();
+  renderMonthlyMini();
   document.getElementById("stat-streak").textContent = calcStreak();
   document.getElementById("stat-mastered").textContent = countMastered();
 
@@ -2069,6 +2319,8 @@ function renderStats() {
       readAccList.appendChild(row);
     });
 
+  renderMonthlyBadges(); // 月間バッジのコレクションと今月の進捗
+
   // 実績バッジ(解除済みはカラー、未解除はグレー+条件表示)
   const badgeGrid = document.getElementById("badge-grid");
   badgeGrid.innerHTML = "";
@@ -2163,6 +2415,10 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   state.streak = { count: 0, lastActive: "", best: 0 };
   state.freezeLog = [];
   state.streakMilestones = [];
+  state.weekly = { week: "", claimed: [] };
+  state.monthly = { ym: "", points: 0 };
+  state.monthlyBadges = [];
+  state.league = { week: "", xp: 0, prevXp: 0, pendingResult: null };
   saveState();
   settingsDialog.close();
   showTab("home");

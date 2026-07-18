@@ -97,6 +97,21 @@
       <div id="daily-list"></div>
     </div>
 
+    <div class="card weekly-card">
+      <h2 class="card-title">🗓️ 今週</h2>
+      <div class="league-box">
+        <p class="league-heading">🏁 先週の自分との対戦</p>
+        <div class="league-bar">
+          <div class="league-bar-fill" id="league-bar-fill"></div>
+          <div class="league-ghost-mark" id="league-ghost-mark"></div>
+        </div>
+        <p class="league-text" id="league-text"></p>
+      </div>
+      <p class="weekly-sub">週間クエスト</p>
+      <div id="weekly-list"></div>
+      <div class="monthly-mini" id="monthly-mini"></div>
+    </div>
+
     <div class="stat-grid">
       <div class="card stat-card">
         <p class="stat-num" id="stat-streak">0</p>
@@ -404,6 +419,12 @@
       <h3 class="sub-title">今後7日間の復習予定</h3>
       <div class="forecast-chart" id="read-forecast-chart"></div>
       <p class="hint-small">1つの文書セットの設問に全問正解すると、次の出題が 1日 → 3日 → 7日 → 14日 後ろへ延びます(単語・文法と同じ間隔反復)。</p>
+    </div>
+    <div class="card">
+      <h2 class="card-title">🏆 月間バッジ</h2>
+      <p class="hint-small" id="monthly-progress-text"></p>
+      <div class="mini-bar"><div class="mini-bar-fill" id="monthly-bar-fill"></div></div>
+      <div class="badge-grid" id="monthly-badge-grid"></div>
     </div>
     <div class="card">
       <h2 class="card-title">🎖️ 実績</h2>

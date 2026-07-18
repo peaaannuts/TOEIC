@@ -120,6 +120,29 @@ Duolingoのリサーチを踏まえ、「明日も開かせる」外殻を強化
 - 検証: `scratchpad/smoke.js`(Playwright)で連続/フリーズ消費/リセット/節目/購入/宝箱/移行の
   11ケースを実機ブラウザで自動テスト済み(全PASS)。
 
+## 継続の仕組み・第2弾(週間クエスト/月間バッジ/ゴーストリーグ)(2026-07-18追加)
+
+デイリー(日)より長い目標線を張り、「1日達成したら今日はもう用がない」状態を無くす層。
+
+- **週間クエスト**(`WEEKLY_POOL`・`weeklyQuests()`): 週(月〜日)で3つを `weekKey()` シードで
+  決定的に選ぶ。進捗は `weekAggregate()`(今週7日分のログ集計)で判定。達成で XP+ジェム、
+  `checkWeeklyQuests()` は `checkDailyChallenges()` の最後に呼ぶ。`state.weekly={week,claimed}`。
+- **月間バッジ**(`MONTHLY_THEMES`・`monthlyBadgeFor()`): デイリー/週間クエストの達成ごとに
+  `addMonthlyPoints(1)` を加算。今月の合計が `MONTHLY_TARGET`(40)に達すると季節モチーフの
+  限定バッジを獲得(`checkMonthlyBadge()`)。`state.monthly={ym,points}`(月替わりでリセット)、
+  獲得済みは `state.monthlyBadges=[{ym,icon,name}]`。記録タブに進捗バー+額縁コレクションを表示。
+- **ゴーストリーグ**(`state.league={week,xp,prevXp,pendingResult}`): 本物のリーグはサーバーが要るので
+  「先週の自分のXP合計(ghost=prevXp)を今週のXP(xp)で超えられるか」に置換。`addXp()` 内で
+  今週のXPを加算。週が変わると `ensureLeagueWeek()` が先週分を ghost に確定し、`pendingResult` を立てる
+  → `renderLeague()` が週明けに1回だけ勝敗を演出(勝ちで+50💎)。ホーム「今週」カードに
+  ゴースト位置(👤マーク)付きの対戦バーを表示。
+- ホームは「🗓️ 今週」1枚のカードにゴーストリーグ+週間クエスト+月間ミニ進捗をまとめた
+  (`renderLeague()`/`renderWeekly()`/`renderMonthlyMini()`、いずれも `renderHome()` から呼ぶ)。
+- **意図的に入れていないもの**(第1弾から継続): ハート制。通知(サーバー無しのため)。
+- 検証: `scratchpad/testB.js`(Playwright)で週間クエスト達成/冪等/月間バッジ獲得/ゴースト勝敗/
+  週替わり繰り越し/XP加算/描画の12ケースを実機ブラウザで自動テスト済み(全PASS)。第1弾の
+  `smoke.js` 11ケースも回帰確認済み。
+
 ## 音声(TTS)
 
 `speechSynthesis`(ブラウザ内蔵、無料・オフライン)を使用。音声ファイルは一切使っていない。
@@ -132,7 +155,7 @@ Duolingoのリサーチを踏まえ、「明日も開かせる」外殻を強化
 ## プレビュー検証で踏んだ地雷(次回も起きうる)
 
 - **Service Workerキャッシュ**: `data.js`/`app.js` を編集したら `sw.js` の `CACHE_NAME` を必ずインクリメント
-  (現在 `toeic600-v27`)。プレビューで検証する際は `navigator.serviceWorker.getRegistrations()` から
+  (現在 `toeic600-v28`)。プレビューで検証する際は `navigator.serviceWorker.getRegistrations()` から
   `update()` を呼んで反映を待つ必要がある(でないと古いコードのまま)。
 - **プレビューのscreenshotツールがしばしばタイムアウトする**(このセッション中に複数回発生)。
   そのときは `preview_inspect` / `javascript_tool` でDOM状態や算出スタイルを直接検査する方が確実。
