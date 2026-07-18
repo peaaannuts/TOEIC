@@ -761,3 +761,18 @@ dialog label.check-row input {
   font-weight: 700;
   cursor: pointer;
 }
+.backup-paste { margin-top: 10px; }
+.backup-paste summary { font-size: 12px; color: var(--accent); cursor: pointer; }
+.backup-paste textarea {
+  width: 100%;
+  height: 90px;
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: monospace;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.backup-paste .secondary-btn { width: 100%; flex: none; }

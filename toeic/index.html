@@ -441,9 +441,14 @@
       <p class="backup-note">記録はこの端末・このURLのブラウザ内だけに保存されます。機種変更や別のURLへの引っ越しの前に「書き出す」で保存し、新しい端末で「復元する」と記録を持ち運べます。</p>
       <div class="backup-btns">
         <button type="button" class="secondary-btn" id="backup-export-btn">📤 書き出す</button>
-        <button type="button" class="secondary-btn" id="backup-import-btn">📥 復元する</button>
+        <button type="button" class="secondary-btn" id="backup-import-btn">📥 ファイルから復元</button>
       </div>
       <input type="file" id="backup-file-input" accept="application/json,.json" hidden>
+      <details class="backup-paste">
+        <summary>または、テキストを貼り付けて復元</summary>
+        <textarea id="backup-paste-input" placeholder="バックアップのテキスト(長い文字列)をここに貼り付け"></textarea>
+        <button type="button" class="secondary-btn" id="backup-paste-btn">貼り付けた内容で復元</button>
+      </details>
     </div>
 
     <div class="dialog-actions">

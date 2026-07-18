@@ -2045,6 +2045,11 @@ document.getElementById("backup-file-input").addEventListener("change", (e) => {
   reader.readAsText(file);
   e.target.value = ""; // 同じファイルを続けて選べるようにリセット
 });
+document.getElementById("backup-paste-btn").addEventListener("click", () => {
+  const text = document.getElementById("backup-paste-input").value.trim();
+  if (!text) { alert("テキストが空です。バックアップの文字列を貼り付けてください。"); return; }
+  importBackup(text);
+});
 
 // ---- 起動 ----
 
