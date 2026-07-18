@@ -638,6 +638,21 @@ html, body {
   white-space: pre-wrap;
   color: var(--text);
 }
+.p6-blank {
+  display: inline-block;
+  min-width: 30px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--read-color);
+  border-bottom: 2px solid var(--read-color);
+  padding: 0 4px;
+}
+.p6-blank.active {
+  color: #fff;
+  background: var(--read-color);
+  border-radius: 4px;
+  border-bottom: none;
+}
 
 .accuracy-total { margin: 0 0 10px; font-size: 15px; font-weight: 700; }
 .acc-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }

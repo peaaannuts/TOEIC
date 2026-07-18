@@ -1206,3 +1206,68 @@ const READING = [
     ],
   },
 ];
+
+// PART6: Part 6形式(長文穴埋め)。text内の {1}..{4} が空所。各設問 qs[n] が空所(n+1)に対応。
+// c のa番目が正解で表示時にシャッフル。ins:true は文挿入問題(選択肢が一文)。jq=完成文の和訳。
+const PART6 = [
+  {
+    t: "Eメール",
+    text: "Dear Ms. Alvarez,\n\nWelcome to Brighton Consulting. We are delighted that you have {1} our team. Your first day will be Monday, March 3.\n\nOn your first morning, please report to the reception desk on the third floor. A member of the human resources team will {2} you to your workstation and explain the orientation schedule. {3}\n\nWe {4} you to review the attached employee handbook before your start date. If you have any questions, feel free to contact me.\n\nBest regards,\nDaniel Cho, HR Manager",
+    qs: [
+      { c: ["joined","joining","to join","join"], a: 0, ins: false, x: "have + 過去分詞 の現在完了。have joined(加わった)。", jq: "私たちのチームに加わってくださり嬉しく思います。" },
+      { c: ["escort","attract","remove","install"], a: 0, ins: false, x: "escort A to B(AをBへ案内する)。attract(引きつける)などは文脈に合いません。", jq: "人事部の者があなたを作業場所まで案内します。" },
+      { c: ["The orientation will help you become familiar with our company's policies.","Unfortunately, the position has already been filled.","We regret that your application was not successful.","Please return the defective item within 30 days."], a: 0, ins: true, x: "直前でオリエンテーションの予定に触れているので、その内容を補足する文が自然です。他は不採用通知や返品案内で文脈に合いません。", jq: "そのオリエンテーションは当社の方針に慣れるのに役立ちます。" },
+      { c: ["encourage","enjoy","prevent","avoid"], a: 0, ins: false, x: "encourage A to do(Aに〜するよう勧める)。prevent/avoid は逆の意味になります。", jq: "開始日までに従業員ハンドブックに目を通すことをお勧めします。" },
+    ],
+  },
+  {
+    t: "お知らせ",
+    text: "NOTICE: Changes to Parking Policy\n\nBeginning next month, all employees must display a valid parking permit when using the company lot. Permits can be obtained from the security office at no {1}.\n\nVehicles without a permit will be {2} at the owner's expense. {3} We appreciate your cooperation in keeping the lot organized.\n\nIf your permit is lost or stolen, please report it {4} so that a replacement can be issued.\n\nBuilding Management",
+    qs: [
+      { c: ["charge","fee","price","payment"], a: 0, ins: false, x: "at no charge(無料で)は定型表現。fee/price はこの形を取りません。", jq: "許可証は警備室から無料で入手できます。" },
+      { c: ["towed","towing","tow","to tow"], a: 0, ins: false, x: "will be + 過去分詞(受動態)。車はレッカー移動される側なので towed。", jq: "許可証のない車は所有者負担でレッカー移動されます。" },
+      { c: ["This new rule applies to both full-time and part-time staff.","The cafeteria will be closed for renovations.","Refunds will be processed within five business days.","The annual picnic has been postponed."], a: 0, ins: true, x: "駐車規則の話が続いているので、規則の適用範囲を補足する文が自然です。", jq: "この新しい規則は正社員にもパート従業員にも適用されます。" },
+      { c: ["promptly","recently","hardly","rarely"], a: 0, ins: false, x: "report it promptly(速やかに報告する)。recently(最近)は過去の話で不適切です。", jq: "許可証を紛失・盗難された場合は速やかに報告してください。" },
+    ],
+  },
+  {
+    t: "広告",
+    text: "Introducing TaskFlow 2.0\n\nAre you looking for a simple way to manage your team's projects? TaskFlow 2.0 is {1} to help small businesses stay organized. With our updated design, you can assign tasks, set deadlines, and track progress all in one place.\n\n{2} Our new mobile app also lets you check updates while you are away from the office.\n\nBest of all, TaskFlow 2.0 is {3} affordable. Plans start at just $9 per month. Sign up today and receive a free 30-day trial. No credit card is {4}.",
+    qs: [
+      { c: ["designed","design","designing","designs"], a: 0, ins: false, x: "be designed to do(〜するよう設計されている)。受動態。", jq: "TaskFlow 2.0は小規模事業者の整理整頓を助けるよう設計されています。" },
+      { c: ["You can access your projects from any device.","The store will close at 8 P.M. on weekdays.","Please submit your resume by Friday.","The refund has been processed."], a: 0, ins: true, x: "直後でモバイルアプリの話につながるので、どの端末からもアクセスできるという文が自然です。", jq: "どの端末からでもプロジェクトにアクセスできます。" },
+      { c: ["remarkably","remarkable","remark","remarks"], a: 0, ins: false, x: "形容詞 affordable を修飾する副詞 remarkably(著しく)。", jq: "TaskFlow 2.0は驚くほど手頃な価格です。" },
+      { c: ["required","requiring","require","requires"], a: 0, ins: false, x: "is required(必要とされる)。クレジットカードは「必要とされる」側なので受動態。", jq: "クレジットカードは必要ありません。" },
+    ],
+  },
+  {
+    t: "記事",
+    text: "GREENVILLE — Marlow's Grocery announced yesterday that it will open a new branch on Fifth Avenue this fall. The store has seen steady growth {1} it opened its first location a decade ago.\n\n{2} The new branch will create approximately 40 jobs for local residents. According to store manager Paula Reed, hiring will {3} in August.\n\nThe company is known for its locally sourced produce and friendly service. Customers who live nearby say they are {4} to have another option for grocery shopping.",
+    qs: [
+      { c: ["since","during","while","because of"], a: 0, ins: false, x: "接続詞 since(〜以来)。後ろが文(it opened)なので前置詞 during や because of は使えません。", jq: "その店は10年前に最初の店舗を開いて以来、着実に成長してきました。" },
+      { c: ["The expansion is part of the company's long-term growth plan.","The restaurant received several complaints last week.","The museum is open on weekends only.","Tickets can be purchased at the front desk."], a: 0, ins: true, x: "店舗拡大の記事なので、拡大が長期計画の一部だと補足する文が自然です。", jq: "この拡大は同社の長期的な成長計画の一部です。" },
+      { c: ["begin","began","beginning","begun"], a: 0, ins: false, x: "will の後ろは動詞の原形 begin。", jq: "店長のポーラ・リードさんによると、採用は8月に始まります。" },
+      { c: ["pleased","pleasing","please","pleasure"], a: 0, ins: false, x: "be pleased to do(〜して嬉しい)。", jq: "近隣住民は、食料品の買い物の選択肢が増えて嬉しいと話しています。" },
+    ],
+  },
+  {
+    t: "社内連絡",
+    text: "MEMO\nTo: All Sales Staff\nFrom: Training Department\nRe: Upcoming Workshop\n\nA workshop on our new customer database will be held on Friday, June 12. Attendance is {1} for all sales representatives.\n\nThe session will cover how to enter customer information {2} and generate reports. {3} Please bring your laptop so that you can practice during the workshop.\n\nIf you are unable to attend, you must {4} the training department by Wednesday to arrange an alternative session.",
+    qs: [
+      { c: ["mandatory","voluntary","optional","reluctant"], a: 0, ins: false, x: "be mandatory(必須である)。voluntary/optional(任意)は逆の意味です。", jq: "出席は全営業担当者にとって必須です。" },
+      { c: ["accurately","accurate","accuracy","accurateness"], a: 0, ins: false, x: "動詞 enter を修飾する副詞 accurately(正確に)。", jq: "この講習では顧客情報を正確に入力する方法などを扱います。" },
+      { c: ["The workshop is expected to last about two hours.","The store will be closed for the holiday.","We apologize for the shipping delay.","Your subscription has expired."], a: 0, ins: true, x: "ワークショップの内容説明が続いているので、所要時間を補足する文が自然です。", jq: "そのワークショップは約2時間続く見込みです。" },
+      { c: ["notify","announce","say","speak"], a: 0, ins: false, x: "notify + 目的語(〜に知らせる)。announce/say/speak はこの形を取れません。", jq: "出席できない場合は水曜までに研修部に知らせなければなりません。" },
+    ],
+  },
+  {
+    t: "手紙",
+    text: "Dear Mr. Feldman,\n\nThank you for being a loyal customer of Sunrise Magazine {1} the past five years. Your current subscription will expire at the end of this month.\n\n{2} If you renew before June 30, you will receive a special discount of 20 percent. In addition, we will {3} a free tote bag to all renewing subscribers.\n\nRenewing is easy. Simply visit our website or call our customer service line. We hope you will {4} to enjoy Sunrise Magazine for many years to come.\n\nSincerely,\nThe Sunrise Team",
+    qs: [
+      { c: ["for","since","by","in"], a: 0, ins: false, x: "for + 期間(〜の間)。for the past five years(過去5年間)。since は起点、by は期限で不適切。", jq: "過去5年間、サンライズ・マガジンをご愛顧いただきありがとうございます。" },
+      { c: ["We would love for you to continue reading with us.","The product you ordered is out of stock.","Your payment could not be processed.","The event has been rescheduled to next week."], a: 0, ins: true, x: "購読更新を促す手紙なので、これからも読んでほしいという文が自然です。", jq: "これからも私たちと一緒に読み続けていただけたら嬉しいです。" },
+      { c: ["send","arrive","reply","respond"], a: 0, ins: false, x: "send + 目的語(〜を送る)。arrive/reply/respond は自動詞で目的語を直接取れません。", jq: "さらに、更新される購読者全員に無料のトートバッグをお送りします。" },
+      { c: ["continue","stop","finish","quit"], a: 0, ins: false, x: "continue to do(〜し続ける)。文脈上「これからも楽しみ続ける」。", jq: "今後も長年にわたってサンライズ・マガジンをお楽しみいただけることを願っています。" },
+    ],
+  },
+];

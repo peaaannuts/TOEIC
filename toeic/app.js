@@ -17,7 +17,8 @@ function defaultState() {
     quizStats: {},   // questionIndex -> { lv, next, seen, ok }(単語と同じ間隔反復)
     listenStats: {}, // part2Index -> { lv, next, seen, ok }(同上)
     part1Stats: {},  // part1Index -> { lv, next, seen, ok }(同上)
-    readStats: {},   // reading文書セットindex -> { lv, next, seen, ok }(セット全問正解でレベルUP)
+    readStats: {},   // Part 7文書セットindex -> { lv, next, seen, ok }(セット全問正解でレベルUP)
+    part6Stats: {},  // Part 6長文index -> { lv, next, seen, ok }(同上)
     xp: 0,           // 累計XP(レベルはここから算出)
     goalDone: "",    // ノルマ全達成を祝った日(1日1回だけ祝う)
     daily: null,     // { date, claimed: [id...] } デイリーチャレンジの達成記録
@@ -43,7 +44,7 @@ function loadState() {
     const s = JSON.parse(raw);
     const merged = { ...defaultState(), ...s, settings: { ...defaultState().settings, ...s.settings } };
     // 旧形式(lv/nextなし)の文法・リスニング記録を間隔反復形式へ移行
-    [merged.quizStats, merged.listenStats, merged.part1Stats, merged.readStats].forEach((stats) => {
+    [merged.quizStats, merged.listenStats, merged.part1Stats, merged.readStats, merged.part6Stats].forEach((stats) => {
       Object.values(stats).forEach((st) => {
         if (st.lv === undefined) {
           st.lv = st.ok > 0 ? 1 : 0;
@@ -1392,13 +1393,18 @@ document.getElementById("listen-again-btn").addEventListener("click", () => star
 document.getElementById("listen-play-btn").addEventListener("click", playListenAudio);
 document.getElementById("listen-next-btn").addEventListener("click", nextListenQuestion);
 
-// ---- 読解 (Part 7: 文書読解) ----
-// READINGは文書セットの配列。各セットは passages(1〜2文書)+ qs(2〜4設問)。
+// ---- 読解 (Part 6: 長文穴埋め / Part 7: 文書読解) ----
+// 読解タブは2セクション。どちらも「文書(セット)+ 複数設問」を1単位として扱う。
+//   Part 7: READING(passages[]+qs[])。設問は内容理解。
+//   Part 6: PART6(text内の {1}..{4} が空所 + qs[])。設問は空所補充・文挿入。
 // SRSは「文書セット単位」: セット内の全設問に正解するとレベルUP(間隔が延びる)、
-// 1問でも間違えるとレベル0に戻る。読解の狙いは「速く正確に読む」練習なのでタイマーを表示する。
+// 1問でも間違えるとレベル0に戻る。狙いは「速く正確に読む」練習なのでタイマーを表示する。
+// Part 6・Part 7 とも本番のReadingセクションなので log.read に加算(ノルマ・推定Readingスコアに反映)。
 
-const READ_SET_SIZE = 2; // 1セッションで扱う文書セット数
+const READ7_SET_SIZE = 2; // Part 7の1セッションで扱う文書数
+const READ6_SET_SIZE = 2; // Part 6の1セッションで扱う長文数
 
+let readSection = 7;  // 6 = Part 6(長文穴埋め), 7 = Part 7(読解)
 let readQueue = [];   // 出題する文書セットindexの配列
 let readPos = 0;      // 現在の文書セット(readQueue内の位置)
 let readQPos = 0;     // 現在の設問(セット内の位置)
@@ -1410,12 +1416,18 @@ let readOrder = [];   // 現在の設問の選択肢表示順
 let readStartMs = 0;
 let readTimerId = null;
 
+function readSets() { return readSection === 6 ? PART6 : READING; }
+function readStatsStore() { return readSection === 6 ? state.part6Stats : state.readStats; }
+function readSetSize() { return readSection === 6 ? READ6_SET_SIZE : READ7_SET_SIZE; }
+function setsQCount(sets) { return sets.reduce((n, s) => n + s.qs.length, 0); }
+
 function buildReadQueue() {
-  const stats = state.readStats;
-  const size = Math.min(READ_SET_SIZE, READING.length);
+  const sets = readSets();
+  const stats = readStatsStore();
+  const size = Math.min(readSetSize(), sets.length);
   const today = todayKey();
   const due = [], fresh = [], future = [];
-  READING.forEach((_, i) => {
+  sets.forEach((_, i) => {
     const st = stats[i];
     if (!st || st.seen === 0) fresh.push(i);
     else if (st.next <= today) due.push(i);
@@ -1435,34 +1447,33 @@ function buildReadQueue() {
   return shuffleArray(queue);
 }
 
-function readDueNewCounts() {
+function readSectionCounts(sets, stats) {
   const today = todayKey();
   let due = 0, fresh = 0;
-  READING.forEach((_, i) => {
-    const st = state.readStats[i];
+  sets.forEach((_, i) => {
+    const st = stats[i];
     if (!st || st.seen === 0) fresh++;
     else if (st.next <= today) due++;
   });
   return { due, fresh };
 }
 
-function readTotalQuestions() {
-  return READING.reduce((n, s) => n + s.qs.length, 0);
-}
-
 function renderReadStart() {
   document.getElementById("read-start").classList.remove("hidden");
   document.getElementById("read-session").classList.add("hidden");
   document.getElementById("read-result").classList.add("hidden");
-  const { due, fresh } = readDueNewCounts();
-  document.getElementById("read-summary").innerHTML =
-    `復習する文書: <strong>${due}</strong> 件 ／ 新しい文書: <strong>${fresh}</strong> 件(全${READING.length}件・${readTotalQuestions()}問)`;
-  const c = srsRetentionCounts(READING.length, state.readStats);
-  renderRetentionBar("read-retention-bar", c, READING.length);
-  document.getElementById("read-retention-text").textContent = retentionText(c) + "(文書セット単位)";
+  const p6 = readSectionCounts(PART6, state.part6Stats);
+  document.getElementById("part6-summary").innerHTML =
+    `復習する長文: <strong>${p6.due}</strong> 件 ／ 新しい長文: <strong>${p6.fresh}</strong> 件(全${PART6.length}件・${setsQCount(PART6)}問)`;
+  renderRetentionBar("part6-retention-bar", srsRetentionCounts(PART6.length, state.part6Stats), PART6.length);
+  const p7 = readSectionCounts(READING, state.readStats);
+  document.getElementById("part7-summary").innerHTML =
+    `復習する文書: <strong>${p7.due}</strong> 件 ／ 新しい文書: <strong>${p7.fresh}</strong> 件(全${READING.length}件・${setsQCount(READING)}問)`;
+  renderRetentionBar("part7-retention-bar", srsRetentionCounts(READING.length, state.readStats), READING.length);
 }
 
-function startRead() {
+function startRead(section) {
+  readSection = section;
   readQueue = buildReadQueue();
   if (readQueue.length === 0) return;
   readPos = 0;
@@ -1498,13 +1509,37 @@ function updateReadTimer() {
 }
 
 function currentReadSet() {
-  return READING[readQueue[readPos]];
+  return readSets()[readQueue[readPos]];
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function renderReadPassages() {
   const set = currentReadSet();
   const box = document.getElementById("read-passages");
   box.innerHTML = "";
+  if (readSection === 6) {
+    // Part 6: 単一の長文。{1}..{4} を空所ラベルに置換し、現在解答中の空所を強調表示する
+    const wrap = document.createElement("div");
+    wrap.className = "read-doc";
+    const label = document.createElement("p");
+    label.className = "read-doc-label";
+    label.textContent = set.t;
+    const body = document.createElement("p");
+    body.className = "read-doc-text";
+    let html = escapeHtml(set.text);
+    for (let n = 1; n <= set.qs.length; n++) {
+      const active = n === readQPos + 1;
+      html = html.replace("{" + n + "}", `<span class="p6-blank${active ? " active" : ""}">(${n})</span>`);
+    }
+    body.innerHTML = html.replace(/\n/g, "<br>");
+    wrap.appendChild(label);
+    wrap.appendChild(body);
+    box.appendChild(wrap);
+    return;
+  }
   set.passages.forEach((p) => {
     const wrap = document.createElement("div");
     wrap.className = "read-doc";
@@ -1523,10 +1558,19 @@ function renderReadPassages() {
 function showReadQuestion() {
   const set = currentReadSet();
   const q = set.qs[readQPos];
-  document.getElementById("read-progress").textContent =
-    `文書 ${readPos + 1}/${readQueue.length}　設問 ${readQPos + 1}/${set.qs.length}`;
-  document.getElementById("read-qtype").textContent = set.t;
-  document.getElementById("read-question").textContent = q.q;
+  if (readSection === 6) {
+    renderReadPassages(); // 現在の空所ハイライトを更新
+    document.getElementById("read-progress").textContent =
+      `長文 ${readPos + 1}/${readQueue.length}　空所 ${readQPos + 1}/${set.qs.length}`;
+    document.getElementById("read-qtype").textContent = "Part 6 ・ " + set.t;
+    document.getElementById("read-question").textContent =
+      q.ins ? `空所 (${readQPos + 1}) に入る最も適切な一文は?` : `空所 (${readQPos + 1}) に入る最も適切な語句は?`;
+  } else {
+    document.getElementById("read-progress").textContent =
+      `文書 ${readPos + 1}/${readQueue.length}　設問 ${readQPos + 1}/${set.qs.length}`;
+    document.getElementById("read-qtype").textContent = "Part 7 ・ " + set.t;
+    document.getElementById("read-question").textContent = q.q;
+  }
   document.getElementById("read-feedback").classList.add("hidden");
 
   // 選択肢の表示順をシャッフル(正解位置を覚えてしまうのを防ぐ)
@@ -1582,32 +1626,45 @@ function answerRead(chosen, btn) {
 
   const script = document.getElementById("read-script");
   script.innerHTML = "";
-  const qLine = document.createElement("p");
-  qLine.className = "script-q";
-  qLine.innerHTML = `<strong>${q.q}</strong><br><span>${q.jq}</span>`;
-  script.appendChild(qLine);
-  const aLine = document.createElement("p");
-  aLine.className = "script-line correct";
-  aLine.textContent = `正解: ${q.c[q.a]}`;
-  script.appendChild(aLine);
+  if (readSection === 6) {
+    // Part 6: 空所の正解語句 + 完成文の和訳
+    const line = document.createElement("p");
+    line.className = "script-q";
+    line.innerHTML = `<strong>空所 (${readQPos + 1}) の正解: ${escapeHtml(q.c[q.a])}</strong>` +
+      (q.jq ? `<br><span>${escapeHtml(q.jq)}</span>` : "");
+    script.appendChild(line);
+  } else {
+    // Part 7: 設問文 + 和訳 + 正解
+    const qLine = document.createElement("p");
+    qLine.className = "script-q";
+    qLine.innerHTML = `<strong>${escapeHtml(q.q)}</strong><br><span>${escapeHtml(q.jq)}</span>`;
+    script.appendChild(qLine);
+    const aLine = document.createElement("p");
+    aLine.className = "script-line correct";
+    aLine.textContent = `正解: ${q.c[q.a]}`;
+    script.appendChild(aLine);
+  }
 
   document.getElementById("read-explanation").textContent = q.x;
   const isLastQ = readQPos + 1 >= set.qs.length;
   const isLastSet = readPos + 1 >= readQueue.length;
+  const nextInSet = readSection === 6 ? "次の空所へ" : "次の設問へ";
+  const nextSet = readSection === 6 ? "次の長文へ" : "次の文書へ";
   document.getElementById("read-next-btn").textContent =
-    !isLastQ ? "次の設問へ" : (isLastSet ? "結果を見る" : "次の文書へ");
+    !isLastQ ? nextInSet : (isLastSet ? "結果を見る" : nextSet);
   document.getElementById("read-feedback").classList.remove("hidden");
 }
 
 function finalizeReadSet() {
   // 文書セット単位のSRS: 全問正解でレベルUP、1問でも間違えるとレベル0
+  const stats = readStatsStore();
   const idx = readQueue[readPos];
-  const st = state.readStats[idx] || { lv: 0, next: todayKey(), seen: 0, ok: 0 };
+  const st = stats[idx] || { lv: 0, next: todayKey(), seen: 0, ok: 0 };
   st.seen++;
   if (readSetOk) { st.ok++; st.lv = Math.min(MAX_LEVEL, st.lv + 1); }
   else { st.lv = 0; }
   st.next = addDays(todayKey(), INTERVALS[st.lv]);
-  state.readStats[idx] = st;
+  stats[idx] = st;
   saveState();
 }
 
@@ -1651,17 +1708,21 @@ function finishRead() {
   const title = pct === 100 ? "パーフェクト!!" : pct >= 80 ? "すばらしい!" : pct >= 60 ? "その調子!" : "解説を読み返そう";
   document.getElementById("read-result-emoji").textContent = emoji;
   document.getElementById("read-result-title").textContent = title;
+  const paceNote = readSection === 6
+    ? "本番Part 6は約16問。文脈から空所を素早く埋める練習です。"
+    : "本番Part 7は約54問を約55分で解きます(目安 約1問/分)。";
   document.getElementById("read-result-text").innerHTML =
     `${readTotal}問中 <strong>${readCorrect}</strong> 問正解(${pct}%)<br>` +
     `所要時間: <strong>${mm}:${ss}</strong> ／ ペース: <strong>${pace}</strong> 問/分<br>` +
-    `本番Part 7は約54問を約55分で解きます(目安 約1問/分)。<br>` +
+    `${paceNote}<br>` +
     `獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
   if (pct === 100) confetti();
   maybeCelebrateGoal();
 }
 
-document.getElementById("read-start-btn").addEventListener("click", startRead);
-document.getElementById("read-again-btn").addEventListener("click", startRead);
+document.getElementById("part6-start-btn").addEventListener("click", () => startRead(6));
+document.getElementById("part7-start-btn").addEventListener("click", () => startRead(7));
+document.getElementById("read-again-btn").addEventListener("click", () => startRead(readSection));
 document.getElementById("read-next-btn").addEventListener("click", nextReadQuestion);
 
 // ---- 記録 ----
@@ -1804,21 +1865,26 @@ function renderStats() {
       listenAccList.appendChild(row);
     });
 
-  // 読解の定着度(文書セット単位)+ 全体正答率(問題単位)+ 文書タイプ別の定着率
+  // 読解(Part 6 + Part 7)の定着度(文書セット単位)+ 全体正答率(問題単位)+ 文書タイプ別の定着率
   const aggR = aggregates();
   document.getElementById("accuracy-read-total").textContent =
     aggR.read > 0 ? `全体: ${Math.round((aggR.readOk / aggR.read) * 100)}%(${aggR.read}問解答)` : "まだ読解を解いていません";
-  const readRet = srsRetentionCounts(READING.length, state.readStats);
-  renderRetentionBar("stats-read-retention-bar", readRet, READING.length);
-  document.getElementById("stats-read-retention-text").textContent = retentionText(readRet) + "(文書セット単位)";
-  renderForecast("read-forecast-chart", [state.readStats]);
+  const r6 = srsRetentionCounts(PART6.length, state.part6Stats);
+  const r7 = srsRetentionCounts(READING.length, state.readStats);
+  const readRet = { mature: r6.mature + r7.mature, young: r6.young + r7.young, learning: r6.learning + r7.learning, fresh: r6.fresh + r7.fresh };
+  const readTotalSets = PART6.length + READING.length;
+  renderRetentionBar("stats-read-retention-bar", readRet, readTotalSets);
+  document.getElementById("stats-read-retention-text").textContent = retentionText(readRet) + "(Part 6・7 文書セット単位)";
+  renderForecast("read-forecast-chart", [state.part6Stats, state.readStats]);
   const readByType = {};
-  READING.forEach((set, i) => {
-    const st = state.readStats[i];
-    if (!st || st.seen === 0) return;
-    if (!readByType[set.t]) readByType[set.t] = { seen: 0, ok: 0 };
-    readByType[set.t].seen += st.seen;
-    readByType[set.t].ok += st.ok;
+  [[PART6, state.part6Stats], [READING, state.readStats]].forEach(([sets, stats]) => {
+    sets.forEach((set, i) => {
+      const st = stats[i];
+      if (!st || st.seen === 0) return;
+      if (!readByType[set.t]) readByType[set.t] = { seen: 0, ok: 0 };
+      readByType[set.t].seen += st.seen;
+      readByType[set.t].ok += st.ok;
+    });
   });
   const readAccList = document.getElementById("accuracy-read-list");
   readAccList.innerHTML = "";
@@ -1913,6 +1979,7 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   state.listenStats = {};
   state.part1Stats = {};
   state.readStats = {};
+  state.part6Stats = {};
   state.log = {};
   saveState();
   settingsDialog.close();
