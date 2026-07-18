@@ -1986,6 +1986,66 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   showTab("home");
 });
 
+// ---- 記録のバックアップ(書き出し / 復元) ----
+// 記録は localStorage(このURLのブラウザ内)にしか無いので、機種変更・URL移行に備えて
+// state全体をJSONで書き出し/読み込みできるようにする。アプリ更新では記録は消えないが、
+// URLが変わると別の保存場所になるため、その引っ越し手段にもなる。
+
+function exportBackup() {
+  const text = JSON.stringify(state);
+  const blob = new Blob([text], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `toeic600-backup-${todayKey()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // 対応端末ではクリップボードにもコピー(ファイルの扱いが難しい端末向けの保険)
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+  showBanner("📤 バックアップを書き出しました");
+}
+
+function importBackup(text) {
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    alert("ファイルを読み込めませんでした(JSON形式ではありません)。");
+    return;
+  }
+  // TOEICアプリの記録らしいか簡易チェック(誤ファイルで上書きしないため)
+  if (!parsed || typeof parsed !== "object" || (!parsed.words && !parsed.settings && !parsed.log)) {
+    alert("このファイルはTOEICアプリのバックアップではないようです。");
+    return;
+  }
+  if (!confirm("現在の記録を、このバックアップの内容で上書きします。よろしいですか?")) return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+  state = loadState(); // 旧形式からの移行処理も通す
+  saveState();
+  settingsDialog.close();
+  showTab("home");
+  confetti();
+  showBanner("📥 バックアップから復元しました");
+}
+
+document.getElementById("backup-export-btn").addEventListener("click", exportBackup);
+document.getElementById("backup-import-btn").addEventListener("click", () => {
+  document.getElementById("backup-file-input").click();
+});
+document.getElementById("backup-file-input").addEventListener("change", (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => importBackup(String(reader.result));
+  reader.onerror = () => alert("ファイルの読み込みに失敗しました。");
+  reader.readAsText(file);
+  e.target.value = ""; // 同じファイルを続けて選べるようにリセット
+});
+
 // ---- 起動 ----
 
 renderHome();

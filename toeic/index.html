@@ -435,6 +435,17 @@
       <input type="checkbox" id="autospeak-input">
       <span>単語カードを自動で読み上げる</span>
     </label>
+
+    <div class="backup-section">
+      <p class="backup-title">💾 学習記録のバックアップ</p>
+      <p class="backup-note">記録はこの端末・このURLのブラウザ内だけに保存されます。機種変更や別のURLへの引っ越しの前に「書き出す」で保存し、新しい端末で「復元する」と記録を持ち運べます。</p>
+      <div class="backup-btns">
+        <button type="button" class="secondary-btn" id="backup-export-btn">📤 書き出す</button>
+        <button type="button" class="secondary-btn" id="backup-import-btn">📥 復元する</button>
+      </div>
+      <input type="file" id="backup-file-input" accept="application/json,.json" hidden>
+    </div>
+
     <div class="dialog-actions">
       <button type="button" class="danger-btn" id="reset-btn">学習記録をリセット</button>
       <span class="spacer"></span>
