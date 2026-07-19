@@ -948,3 +948,35 @@ dialog label.check-row input {
   padding: 4px 0;
 }
 .l34-script-details .listen-script { margin-top: 8px; }
+
+/* ---- Part 3/4 図表参照問題の図表 ---- */
+.l34-graphic {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: #fbfdfe;
+}
+.l34-graphic-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+.l34-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.l34-table th, .l34-table td {
+  border: 1px solid #d7e2e8;
+  padding: 6px 8px;
+  text-align: left;
+}
+.l34-table th {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 700;
+}
+.l34-table tbody tr:nth-child(even) td { background: #f3f8fa; }

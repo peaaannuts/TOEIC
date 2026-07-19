@@ -1957,9 +1957,36 @@ function startListen34(section) {
   startNewL34Set();
 }
 
+// 図表参照問題用の図表(スケジュール表・料金表・案内板など)を表示する。
+// 本番同様、図表は画面に印刷される想定でセット中ずっと表示し、音声のヒントと照合して解く。
+function renderL34Graphic() {
+  const set = currentL34Set();
+  const box = document.getElementById("listen34-graphic");
+  const g = set.graphic;
+  if (!g || !Array.isArray(g.rows)) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+  let html = "";
+  if (g.title) html += `<p class="l34-graphic-title">${escapeHtml(g.title)}</p>`;
+  html += "<table class=\"l34-table\">";
+  if (Array.isArray(g.headers)) {
+    html += "<thead><tr>";
+    g.headers.forEach((h) => { html += `<th>${escapeHtml(h)}</th>`; });
+    html += "</tr></thead>";
+  }
+  html += "<tbody>";
+  g.rows.forEach((r) => {
+    html += "<tr>";
+    r.forEach((c) => { html += `<td>${escapeHtml(c)}</td>`; });
+    html += "</tr>";
+  });
+  html += "</tbody></table>";
+  box.innerHTML = html;
+  box.classList.remove("hidden");
+}
+
 function startNewL34Set() {
   l34QPos = 0; l34SetOk = true; l34SetCorrect = 0;
   renderL34Transcript();
+  renderL34Graphic();
   playL34Audio();
   showL34Question();
   window.scrollTo(0, 0);

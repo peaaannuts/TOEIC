@@ -1633,6 +1633,68 @@ const PART3 = [
     { q: "What is the man trying to arrange?", jq: "男性は何を手配しようとしていますか?", c: ["A factory tour for new engineers","A shipment of new machinery","A training seminar at his office","A job interview session"], a: 0, x: "新入社員のエンジニアたちの工場見学を手配しようとしています。" },
     { q: "Why does the woman speak to Ken?", jq: "女性はなぜケンに話しかけますか?", c: ["To confirm the assembly line's schedule","To ask him to lead the tour","To request more staff","To report a safety issue"], a: 0, x: "木曜午後に組立ラインが動いているか確認するためケンに尋ねています。" },
     { q: "What does the woman ask the man to do?", jq: "女性は男性に何をするよう頼んでいますか?", c: ["Have the visitors wear closed-toe shoes","Bring their own safety helmets","Arrive an hour early","Pay a tour fee in advance"], a: 0, x: "安全のため見学者につま先の覆われた靴を履くよう伝えてほしいと頼んでいます。" }
+  ] },
+// ---- Part 3 図表参照問題(会話+図表) ----
+{ t: "会議日程の相談(図表)",
+  graphic: { type: "table", title: "Conference Schedule — Room A", headers: ["Time","Session"], rows: [["9:00 A.M.","Opening Remarks"],["10:00 A.M.","Marketing Trends"],["11:00 A.M.","Sales Strategies"],["1:00 P.M.","Team Workshop"]] },
+  lines: [
+    { s: "W", text: "Have you looked at today's conference schedule? I want to make sure we don't miss anything important.", jtext: "今日の会議スケジュールは見た?大事なものを見逃さないようにしたいの。" },
+    { s: "M", text: "Yes. I'm mainly interested in the session right before the lunch break at noon.", jtext: "うん。僕は正午の昼休みの直前のセッションに一番興味があるんだ。" },
+    { s: "W", text: "Good choice. That one usually has practical tips we can actually use with clients.", jtext: "いい選択ね。あれはたいてい、実際に顧客に使える実践的なヒントがあるから。" },
+    { s: "M", text: "Exactly. After that, I was thinking of skipping the afternoon workshop.", jtext: "その通り。そのあとは午後のワークショップは飛ばそうかと思ってたんだ。" },
+    { s: "W", text: "Really? The workshop is hands-on, though. I found it really useful last year.", jtext: "本当に?でもあのワークショップは実践形式よ。去年はとても役に立ったわ。" },
+    { s: "M", text: "Maybe you're right. Let's decide after the morning sessions.", jtext: "君の言う通りかも。午前のセッションのあとで決めよう。" },
+    { s: "W", text: "Sounds good. Let's meet at the entrance to Room A at a quarter to nine.", jtext: "いいわね。9時15分前にA会議室の入口で待ち合わせましょう。" }
+  ],
+  qs: [
+    { q: "Look at the graphic. Which session does the man want to attend?", jq: "図を見てください。男性はどのセッションに出たいですか?", c: ["Sales Strategies","Marketing Trends","Team Workshop","Opening Remarks"], a: 0, g: true, x: "男性は「正午の昼休みの直前」のセッションと言っており、表で11:00は Sales Strategies です。音声のヒント(時間)と図表を照合します。" },
+    { q: "Why does the woman recommend the afternoon workshop?", jq: "女性はなぜ午後のワークショップを勧めますか?", c: ["It involves hands-on practice","It is shorter than the others","It includes a free lunch","It is led by a famous speaker"], a: 0, x: "「hands-on(実践形式)」で去年役に立ったと述べています。" },
+    { q: "What time do the speakers plan to meet?", jq: "話し手たちは何時に会う予定ですか?", c: ["At 8:45 A.M.","At 9:15 A.M.","At noon","At 1:00 P.M."], a: 0, x: "「a quarter to nine(9時15分前=8時45分)」に待ち合わせると言っています。" }
+  ] },
+{ t: "ジムの入会(図表)",
+  graphic: { type: "table", title: "Gym Membership Plans", headers: ["Plan","Monthly Fee"], rows: [["Basic","$30"],["Plus","$45"],["Premium","$60"],["Family","$90"]] },
+  lines: [
+    { s: "W", text: "Hi, I'd like to sign up for a membership, but I'm trying to keep it under fifty dollars a month.", jtext: "こんにちは、入会したいのですが、月50ドル未満に抑えたいんです。" },
+    { s: "M", text: "Sure. Are you interested in group fitness classes, or just access to the gym equipment?", jtext: "承知しました。グループフィットネスのクラスにご興味がありますか、それともジムの器具の利用だけですか?" },
+    { s: "W", text: "I'd really love group classes, but only if it fits my budget.", jtext: "グループクラスがぜひ欲しいですが、予算に合えばの話です。" },
+    { s: "M", text: "In that case, I'd recommend the most complete plan that still stays under fifty. It includes unlimited classes.", jtext: "それでしたら、50ドル未満で最も充実したプランをおすすめします。クラス受け放題が含まれます。" },
+    { s: "W", text: "That sounds perfect. I'll go with that one.", jtext: "それは完璧ですね。それにします。" },
+    { s: "M", text: "Great choice. I'll just need a photo ID to get you signed up.", jtext: "良い選択です。お手続きに写真付きの身分証明書だけいただければ。" }
+  ],
+  qs: [
+    { q: "Look at the graphic. How much will the woman pay per month?", jq: "図を見てください。女性は月にいくら払いますか?", c: ["$45","$30","$60","$90"], a: 0, g: true, x: "「50ドル未満で最も充実したプラン」はクラス受け放題の Plus($45)です。Premium($60)は予算オーバー。音声の条件と図表を照合します。" },
+    { q: "What does the woman want included in her membership?", jq: "女性は会員資格に何が含まれることを望んでいますか?", c: ["Group fitness classes","Personal training","A reserved parking spot","A private locker"], a: 0, x: "グループクラスがぜひ欲しいと言っています。" },
+    { q: "What does the man ask the woman for?", jq: "男性は女性に何を求めていますか?", c: ["A photo ID","A credit card","A doctor's note","A referral from a friend"], a: 0, x: "手続きに写真付き身分証が必要だと言っています。" }
+  ] },
+{ t: "ビル受付での案内(図表)",
+  graphic: { type: "table", title: "Building Directory", headers: ["Floor","Department"], rows: [["1st Floor","Reception"],["2nd Floor","Sales"],["3rd Floor","Accounting"],["4th Floor","Human Resources"]] },
+  lines: [
+    { s: "M", text: "Excuse me, I have some invoices to drop off. Which department handles payments and billing?", jtext: "すみません、請求書を届けたいのですが。支払いと請求を扱う部署はどこですか?" },
+    { s: "W", text: "That would be our accounting team. Do you have an appointment with someone there?", jtext: "それは経理チームですね。どなたかとお約束はありますか?" },
+    { s: "M", text: "No, I just need to leave these documents with them.", jtext: "いいえ、この書類を置いていくだけです。" },
+    { s: "W", text: "No problem. You can take the elevator up and leave them at their front desk.", jtext: "問題ありません。エレベーターで上がって、その部署の受付に置いていただけます。" },
+    { s: "M", text: "Thank you. Is there anything I need to do before I go up?", jtext: "ありがとう。上がる前に何かする必要はありますか?" },
+    { s: "W", text: "Yes, please write your name and company in the visitor log here first.", jtext: "はい、まずこちらの来訪者記録にお名前と会社名をご記入ください。" }
+  ],
+  qs: [
+    { q: "Look at the graphic. Which floor will the man go to?", jq: "図を見てください。男性は何階に行きますか?", c: ["3rd Floor","2nd Floor","4th Floor","1st Floor"], a: 0, g: true, x: "支払い・請求を扱うのは Accounting(経理)で、案内図では3階です。音声(用件)と図表を照合します。" },
+    { q: "Why is the man visiting the building?", jq: "男性はなぜこのビルを訪れていますか?", c: ["To deliver some documents","To attend a job interview","To meet a client","To pick up a package"], a: 0, x: "請求書(書類)を届けるために来ています。" },
+    { q: "What does the woman ask the man to do first?", jq: "女性は男性にまず何をするよう求めていますか?", c: ["Sign the visitor log","Call the department","Wait in the lobby","Show a photo ID"], a: 0, x: "上がる前に来訪者記録に名前と会社名を書くよう求めています。" }
+  ] },
+{ t: "駅での電車の相談(図表)",
+  graphic: { type: "table", title: "Train Departures", headers: ["Destination","Time","Platform"], rows: [["Northport","9:15","2"],["Eastfield","9:30","5"],["Westbrook","9:45","1"],["Southgate","10:00","4"]] },
+  lines: [
+    { s: "W", text: "Our meeting is in Eastfield at ten thirty. Which train should we take?", jtext: "会議は10時半にイーストフィールドであるわ。どの電車に乗るべきかしら?" },
+    { s: "M", text: "There's one leaving at nine thirty. That should get us there with time to spare.", jtext: "9時半発のがあるよ。それなら余裕を持って着けるはずだ。" },
+    { s: "W", text: "Perfect. Do you know which platform it leaves from?", jtext: "完璧ね。どのホームから出るか分かる?" },
+    { s: "M", text: "Let me check the board. They all leave from different platforms.", jtext: "掲示板を確認するよ。全部違うホームから出るんだね。" },
+    { s: "W", text: "We'd better hurry, then. It leaves in about ten minutes.", jtext: "じゃあ急いだ方がいいわ。あと10分ほどで出発よ。" },
+    { s: "M", text: "Right. Let's grab a coffee once we've found the right platform.", jtext: "そうだね。正しいホームを見つけたらコーヒーを買おう。" }
+  ],
+  qs: [
+    { q: "Look at the graphic. Which platform should the speakers go to?", jq: "図を見てください。話し手たちはどのホームに行くべきですか?", c: ["Platform 5","Platform 2","Platform 1","Platform 4"], a: 0, g: true, x: "イーストフィールド行きの9:30発は、案内板ではPlatform 5です。音声(行き先と時刻)と図表を照合します。" },
+    { q: "Where are the speakers going?", jq: "話し手たちはどこへ行きますか?", c: ["To a meeting in Eastfield","To a concert in Northport","To a hotel in Southgate","To a store in Westbrook"], a: 0, x: "10時半からイーストフィールドで会議があります。" },
+    { q: "What does the man suggest doing later?", jq: "男性は後で何をすることを提案していますか?", c: ["Getting a coffee","Buying return tickets","Calling a taxi","Booking a hotel"], a: 0, x: "正しいホームを見つけたらコーヒーを買おうと言っています。" }
   ] }
 ];
 
@@ -1807,5 +1869,48 @@ const PART4 = [
     { q: "What is the main topic of the announcement?", jq: "このお知らせの主な話題は何ですか。", c: ["Upcoming maintenance work on elevators","A change to office working hours","The opening of a new building wing","A company relocation plan"], a: 0, x: "北棟エレベーターの定期メンテナンスが主題です。" },
     { q: "When will the work be finished?", jq: "作業はいつ終わりますか。", c: ["By midday on Friday","Late Friday evening","Early Saturday morning","On Monday afternoon"], a: 0, x: "作業は午前8時から正午までなので昼までに終わります。" },
     { q: "What are staff asked to do during the work?", jq: "作業中、従業員は何をするよう求められていますか。", c: ["Take the stairs or the service elevator","Work from home for the day","Park in a different lot","Move to the south wing"], a: 0, x: "階段か搬入口近くの業務用エレベーターを使うよう求めています。" }
+  ] },
+// ---- Part 4 図表参照問題(トーク+図表) ----
+{ t: "フェスティバルの案内(図表)",
+  graphic: { type: "table", title: "Riverside Festival Schedule", headers: ["Time","Activity"], rows: [["10:00 A.M.","Cooking Demonstration"],["12:00 P.M.","Live Music"],["2:00 P.M.","Art Workshop"],["4:00 P.M.","Prize Drawing"]] },
+  lines: [
+    { s: "W", text: "Welcome, everyone, to the annual Riverside Community Festival. We have a full day of activities planned for you.", jtext: "皆さん、毎年恒例のリバーサイド・コミュニティ・フェスティバルへようこそ。一日を通してたくさんの催しをご用意しています。" },
+    { s: "W", text: "In just a moment, our local chef will begin the very first event of the day here on the main stage.", jtext: "まもなく、地元のシェフがメインステージで本日の最初の催しを始めます。" },
+    { s: "W", text: "Be sure to stick around, because the most popular event, happening right at noon, always draws a huge crowd.", jtext: "ぜひお残りください。正午ちょうどに行われる最も人気の催しは、いつも大勢のお客様で賑わいます。" },
+    { s: "W", text: "Tickets for the afternoon art session are limited, so please sign up early at the information booth.", jtext: "午後のアートのセッションはチケットが限られていますので、案内所でお早めにお申し込みください。" },
+    { s: "W", text: "And don't forget to enter your name for our grand prize, announced at the very end of the day.", jtext: "そして、一日の最後に発表される大賞への応募もお忘れなく。" }
+  ],
+  qs: [
+    { q: "Look at the graphic. Which event does the speaker say is the most popular?", jq: "図を見てください。話し手が最も人気だと言っている催しはどれですか。", c: ["Live Music","Cooking Demonstration","Art Workshop","Prize Drawing"], a: 0, g: true, x: "「正午ちょうどに行われる最も人気の催し」は、予定表では12:00の Live Music です。音声(時間)と図表を照合します。" },
+    { q: "What will happen first at the festival?", jq: "フェスティバルで最初に何が行われますか。", c: ["A cooking demonstration","A live concert","An art class","A prize drawing"], a: 0, x: "地元のシェフが本日最初の催しを始めると述べており、料理の実演です。" },
+    { q: "What are listeners asked to do for the afternoon session?", jq: "聞き手は午後のセッションのために何をするよう求められていますか。", c: ["Sign up early at the information booth","Bring their own art supplies","Pay an entrance fee","Arrive before ten"], a: 0, x: "チケットが限られているため案内所で早めに申し込むよう求めています。" }
+  ] },
+{ t: "スーパーの割引案内(図表)",
+  graphic: { type: "table", title: "Today's Discounts", headers: ["Section","Discount"], rows: [["Produce","10% off"],["Bakery","20% off"],["Dairy","15% off"],["Frozen Foods","25% off"]] },
+  lines: [
+    { s: "M", text: "Attention, valued shoppers, and thank you for visiting Meadow Grocery this afternoon.", jtext: "お買い物中のお客様にご案内します。本日の午後はメドウ・グロサリーにご来店いただきありがとうございます。" },
+    { s: "M", text: "We have special discounts in several sections throughout the store today.", jtext: "本日は店内のいくつかの売り場で特別割引を実施しています。" },
+    { s: "M", text: "If you love fresh bread and pastries, be sure to stop by our bakery section for a wonderful deal.", jtext: "焼きたてのパンやペストリーがお好きな方は、ぜひベーカリー売り場のお得な割引をご利用ください。" },
+    { s: "M", text: "Our friendly staff are always happy to help you find any item, so don't hesitate to ask.", jtext: "親切なスタッフが商品探しをいつでもお手伝いしますので、遠慮なくお声がけください。" },
+    { s: "M", text: "Please remember, these discounts are valid only until closing time tonight.", jtext: "なお、これらの割引は本日の閉店時刻までのみ有効です。" }
+  ],
+  qs: [
+    { q: "Look at the graphic. How much can shoppers save in the section the speaker recommends?", jq: "図を見てください。話し手が勧める売り場では、買い物客はどれだけ割引されますか。", c: ["20%","10%","15%","25%"], a: 0, g: true, x: "話し手が勧めるのはパン・ペストリーの Bakery で、表では 20% off です。音声(勧める売り場)と図表を照合します。" },
+    { q: "When do the discounts end?", jq: "割引はいつ終わりますか。", c: ["At closing time tonight","At noon today","Tomorrow morning","In one hour"], a: 0, x: "割引は本日の閉店時刻までのみ有効だと述べています。" },
+    { q: "What does the speaker say shoppers can do?", jq: "話し手は買い物客が何をできると言っていますか。", c: ["Ask staff for help finding items","Return items without a receipt","Get free home delivery","Join a membership program"], a: 0, x: "スタッフが商品探しを手伝うので遠慮なく声をかけてほしいと言っています。" }
+  ] },
+{ t: "オリエンテーションの部屋案内(図表)",
+  graphic: { type: "table", title: "Orientation Room Assignments", headers: ["Badge Color","Room"], rows: [["Red","101"],["Blue","102"],["Green","201"],["Yellow","202"]] },
+  lines: [
+    { s: "W", text: "Good morning, and welcome to your first day of orientation. We're delighted to have you on the team.", jtext: "おはようございます。オリエンテーション初日へようこそ。皆さんをチームに迎えられて嬉しく思います。" },
+    { s: "W", text: "When you checked in this morning, you each received a colored name badge. Please take a look at yours now.", jtext: "今朝チェックインの際に、皆さんは色付きの名札を受け取りました。今ご自身のものをご確認ください。" },
+    { s: "W", text: "This morning, those of you with a green badge will start in the room listed for your color on the screen.", jtext: "午前中は、緑の名札の方は画面に表示された色ごとの部屋から始めていただきます。" },
+    { s: "W", text: "Everyone else should remain here in the main hall for a short welcome presentation.", jtext: "それ以外の方は、短い歓迎のプレゼンのためこのメインホールにお残りください。" },
+    { s: "W", text: "We'll all come together again for lunch in the cafeteria at noon.", jtext: "正午にはカフェテリアで昼食のため再び全員集合します。" }
+  ],
+  qs: [
+    { q: "Look at the graphic. Which room should green-badge attendees go to?", jq: "図を見てください。緑の名札の参加者はどの部屋へ行くべきですか。", c: ["Room 201","Room 101","Room 102","Room 202"], a: 0, g: true, x: "緑(Green)の名札の人が行く部屋は、割り当て表では 201 です。音声(バッジの色)と図表を照合します。" },
+    { q: "What did listeners receive when they checked in?", jq: "聞き手はチェックインの際に何を受け取りましたか。", c: ["A colored name badge","A company laptop","A parking pass","A printed schedule"], a: 0, x: "色付きの名札を受け取ったと述べています。" },
+    { q: "Where will everyone meet at noon?", jq: "正午に全員はどこに集まりますか。", c: ["In the cafeteria for lunch","In the main hall","In the parking lot","At the front desk"], a: 0, x: "正午にカフェテリアで昼食のため集合すると述べています。" }
   ] }
 ];
