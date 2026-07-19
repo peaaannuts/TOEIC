@@ -1373,3 +1373,239 @@ const PART6 = [
     ],
   },
 ];
+
+// PART3: Part 3(会話). 各会話は { t, lines:[{s,text,jtext}], qs:[{q,jq,c,a,x}] }。
+// s は話者(M/W、3人会話ではM2/W2)。会話は音声のみ、設問・選択肢は画面表示。cのa番目が正解で表示時にシャッフル。
+const PART3 = [
+{
+  t: "オフィスでの会議室予約",
+  lines: [
+    { s: "M", text: "Hi, Karen. I'm trying to book the large conference room for Thursday afternoon, but the system says it's already taken.", jtext: "やあ、カレン。木曜の午後に大会議室を予約しようとしているんだけど、システムではもう埋まっているって出るんだ。" },
+    { s: "W", text: "Oh, right. The marketing team reserved it for their quarterly review. Could you use the smaller room on the fifth floor instead?", jtext: "ああ、そうなの。マーケティングチームが四半期レビューで押さえたのよ。代わりに5階の小さい部屋を使えないかしら?" },
+    { s: "M", text: "The problem is we're expecting about fifteen people from the client's side, so we really need the space.", jtext: "問題は、クライアント側から15人ほど来る予定だから、どうしても広さが必要なんだ。" },
+    { s: "W", text: "Fifteen? In that case, let me check if marketing can move their meeting to Friday. They only have six attendees.", jtext: "15人?それなら、マーケティングが会議を金曜に移せるか確認してみるわ。あちらは6人しか出席しないから。" },
+    { s: "M", text: "That would be a huge help. If they can switch, I'll send out the invitations right away.", jtext: "それは本当に助かるよ。もし変更できるなら、すぐに招待状を送るよ。" },
+    { s: "W", text: "Give me ten minutes. I'll talk to their manager and let you know by email.", jtext: "10分ちょうだい。あちらのマネージャーと話して、メールで知らせるわ。" },
+    { s: "M", text: "Perfect. I'll wait to hear from you before I confirm anything with the client.", jtext: "完璧だ。クライアントに何か確定する前に、君からの連絡を待つよ。" }
+  ],
+  qs: [
+    { q: "What is the man trying to do?", jq: "男性は何をしようとしていますか?", c: ["Reserve a room for a meeting", "Cancel a client visit", "Move his desk to another floor", "Hire more staff"], a: 0, x: "男性は木曜午後に大会議室を予約しようとしています。「book the large conference room」を「Reserve a room」と言い換えています。" },
+    { q: "Why is the small room not suitable?", jq: "なぜ小さい部屋は適していないのですか?", c: ["Too many people will attend", "It is being repaired", "It has no projector", "It is on the wrong floor"], a: 0, x: "クライアント側から15人来るため広さが必要で、小さい部屋では収容できません。" },
+    { q: "What will the woman probably do next?", jq: "女性は次におそらく何をしますか?", c: ["Speak with another manager", "Email the client directly", "Cancel the marketing review", "Print the invitations"], a: 0, x: "女性はマーケティングのマネージャーと話して会議を移せるか確認すると言っています。" }
+  ]
+},
+{
+  t: "レストランでの注文",
+  lines: [
+    { s: "W", text: "Good evening, and welcome. Have you had a chance to look at the menu, or would you like a few more minutes?", jtext: "こんばんは、いらっしゃいませ。メニューはご覧になりましたか、それとももう少しお時間が必要ですか?" },
+    { s: "M", text: "I think we're ready. I'll have the grilled salmon, but could you tell me what comes with it?", jtext: "もう決まったと思います。グリルサーモンをいただきますが、付け合わせは何が付きますか?" },
+    { s: "W", text: "Of course. It comes with roasted vegetables and a side salad. Would you like soup instead of the salad?", jtext: "もちろんです。ローストした野菜とサイドサラダが付きます。サラダの代わりにスープになさいますか?" },
+    { s: "M", text: "Soup sounds better, thanks. And is it possible to get the sauce on the side?", jtext: "スープの方がいいですね、ありがとう。それと、ソースは別添えにしてもらえますか?" },
+    { s: "W", text: "Absolutely, no problem at all. Can I get you anything to drink while you wait?", jtext: "もちろん、まったく問題ありません。お待ちの間、お飲み物はいかがですか?" },
+    { s: "M", text: "Just some sparkling water for now. I might order dessert later.", jtext: "今のところ炭酸水だけで。デザートは後で頼むかもしれません。" },
+    { s: "W", text: "Certainly. I'll bring the water right out and get your order started.", jtext: "承知しました。すぐにお水をお持ちして、ご注文の準備を始めますね。" }
+  ],
+  qs: [
+    { q: "Where does this conversation most likely take place?", jq: "この会話はどこで行われている可能性が高いですか?", c: ["At a restaurant", "At a grocery store", "At a hotel front desk", "At a cooking class"], a: 0, x: "メニュー、注文、料理の付け合わせの話から、レストランでの会話だとわかります。" },
+    { q: "What change does the man request for his meal?", jq: "男性は食事にどんな変更を頼んでいますか?", c: ["Having the sauce served separately", "Adding extra vegetables", "Removing the salt", "Making it spicier"], a: 0, x: "男性は「sauce on the side(ソースを別添え)」を頼んでおり、これを「served separately」と言い換えています。" },
+    { q: "What does the man say he may do later?", jq: "男性は後で何をするかもしれないと言っていますか?", c: ["Order a sweet dish", "Change tables", "Pay in cash", "Ask for the recipe"], a: 0, x: "男性は「order dessert later(後でデザートを頼むかも)」と言っており、「a sweet dish」と言い換えています。" }
+  ]
+},
+{
+  t: "配送の問い合わせ電話",
+  lines: [
+    { s: "W", text: "Thank you for calling Brightway Supplies. This is Diana. How can I help you today?", jtext: "ブライトウェイ・サプライにお電話ありがとうございます。ダイアナです。本日はどのようなご用件でしょうか?" },
+    { s: "M", text: "Hi, I placed an order for office chairs last week, but the tracking page hasn't updated in three days.", jtext: "もしもし、先週オフィスチェアを注文したのですが、追跡ページが3日間更新されていないんです。" },
+    { s: "W", text: "I'm sorry for the trouble. Could you give me your order number so I can look into it?", jtext: "ご迷惑をおかけして申し訳ございません。お調べしますので、注文番号を教えていただけますか?" },
+    { s: "M", text: "Sure, it's 4-7-2-9-1. We were hoping to have the chairs before our new staff start on Monday.", jtext: "はい、4-7-2-9-1です。月曜に新しいスタッフが来る前に椅子が届くことを期待していたんです。" },
+    { s: "W", text: "I see the shipment was delayed at our warehouse, but it left this morning. It should arrive Friday.", jtext: "出荷が当社の倉庫で遅れていたようですが、今朝発送されました。金曜には届くはずです。" },
+    { s: "M", text: "That's a relief. Could you email me the updated delivery details just to be safe?", jtext: "それは安心しました。念のため、更新された配送情報をメールで送ってもらえますか?" },
+    { s: "W", text: "Of course. I'll send that to the address on your account within the hour.", jtext: "もちろんです。一時間以内に、アカウントに登録のアドレス宛にお送りします。" }
+  ],
+  qs: [
+    { q: "Why is the man calling?", jq: "男性はなぜ電話をしていますか?", c: ["To ask about a delayed order", "To return a broken chair", "To cancel his account", "To apply for a job"], a: 0, x: "男性は追跡ページが更新されず注文が遅れていることについて問い合わせています。" },
+    { q: "What does the man say about the chairs?", jq: "男性は椅子について何と言っていますか?", c: ["He needs them before new employees arrive", "They are the wrong color", "They cost too much", "He ordered too many"], a: 0, x: "月曜に新しいスタッフが来る前に椅子が必要だと言っています。「new staff」を「new employees」と言い換えています。" },
+    { q: "What will the woman do for the man?", jq: "女性は男性のために何をしますか?", c: ["Send delivery information by email", "Offer a full refund", "Call the warehouse manager", "Ship a replacement"], a: 0, x: "女性は更新された配送情報を一時間以内にメールで送ると言っています。" }
+  ]
+},
+{
+  t: "空港でのやり取り (3人)",
+  lines: [
+    { s: "M", text: "Excuse me, our flight to Chicago says \"delayed\" on the board. Do you know the new departure time?", jtext: "すみません、シカゴ行きの便が掲示板で「遅延」と出ています。新しい出発時刻はわかりますか?" },
+    { s: "W", text: "Let me check for you. Yes, it's now scheduled to leave at 3:40 instead of 2:15 due to weather.", jtext: "お調べします。はい、天候のため2時15分ではなく3時40分の出発予定に変更されています。" },
+    { s: "W2", text: "Will we still make our connection in Denver? We only had a fifty-minute layover to begin with.", jtext: "デンバーでの乗り継ぎには間に合いますか?もともと乗り継ぎ時間は50分しかなかったんです。" },
+    { s: "W", text: "That connection will be tight. I'd recommend speaking with the agent at gate B12 to see about a later option.", jtext: "その乗り継ぎは厳しいですね。B12ゲートの係員に相談して、後の便の選択肢を確認することをお勧めします。" },
+    { s: "M", text: "Should we go there now, or wait until boarding for this flight?", jtext: "今すぐそこへ行くべきですか、それともこの便の搭乗まで待つべきですか?" },
+    { s: "W", text: "Go now, while it's still quiet. They can rebook you before the line gets long.", jtext: "まだ空いているうちに今行ってください。列が長くなる前に予約を変更してもらえますよ。" },
+    { s: "W2", text: "Thanks so much. We'll head straight over to B12.", jtext: "本当にありがとうございます。まっすぐB12へ向かいます。" }
+  ],
+  qs: [
+    { q: "What is the main problem?", jq: "主な問題は何ですか?", c: ["A flight has been pushed back", "A passenger lost a ticket", "A gate has closed", "The luggage is missing"], a: 0, x: "シカゴ行きの便が天候により遅延しています。「delayed」を「pushed back」と言い換えています。" },
+    { q: "What are the travelers worried about?", jq: "旅行者たちは何を心配していますか?", c: ["Missing a connecting flight", "Paying an extra fee", "Losing their seats together", "Finding a hotel"], a: 0, x: "乗り継ぎ時間が50分しかなく、デンバーでの乗り継ぎに間に合うか心配しています。" },
+    { q: "What does the woman recommend they do?", jq: "女性は彼らに何をするよう勧めていますか?", c: ["Talk to an agent at another gate", "Buy new tickets online", "Wait at the current gate", "Call the airline later"], a: 0, x: "女性はB12ゲートの係員に相談するよう勧めています。" }
+  ]
+},
+{
+  t: "新製品の打ち合わせ",
+  lines: [
+    { s: "W", text: "So, before we launch the new water bottle, I think we need to finalize the packaging design.", jtext: "それで、新しい水筒を発売する前に、パッケージデザインを最終決定する必要があると思うの。" },
+    { s: "M", text: "Agreed. The design team sent over two options yesterday. Did you get a chance to review them?", jtext: "賛成だよ。デザインチームが昨日2案を送ってくれた。目を通す時間はあった?" },
+    { s: "W", text: "I did. I prefer the second one because the recycled materials really appeal to our target customers.", jtext: "見たわ。2案目が好きね。リサイクル素材がターゲット顧客に本当に響くと思うから。" },
+    { s: "M", text: "That's a good point. But the second design costs about twelve percent more to produce.", jtext: "いい指摘だね。でも2案目は製造コストが約12%高いんだ。" },
+    { s: "W", text: "Hmm. Could we test both with a small focus group before deciding? That might be worth the wait.", jtext: "うーん。決める前に小さなフォーカスグループで両方テストできないかしら?待つ価値はあるかもしれない。" },
+    { s: "M", text: "Let's do that. I'll arrange the session for early next week and share the results with you.", jtext: "そうしよう。来週の初めにセッションを手配して、結果を君と共有するよ。" },
+    { s: "W", text: "Great. Let's hold off on any final decision until we hear what the group thinks.", jtext: "いいわね。グループの意見を聞くまで、最終決定は保留にしましょう。" }
+  ],
+  qs: [
+    { q: "What are the speakers mainly discussing?", jq: "話し手は主に何について話していますか?", c: ["How to package a new product", "Where to open a new store", "Who to hire for the team", "When to close the factory"], a: 0, x: "新しい水筒のパッケージデザインの最終決定について話し合っています。" },
+    { q: "What does the woman like about the second design?", jq: "女性は2案目の何を気に入っていますか?", c: ["Its environmentally friendly materials", "Its lower price", "Its bright colors", "Its larger size"], a: 0, x: "リサイクル素材がターゲット顧客に響く点を気に入っています。「recycled materials」を「environmentally friendly materials」と言い換えています。" },
+    { q: "What does the woman mean when she says, \"Let's hold off on any final decision\"?", jq: "女性が「最終決定は保留にしましょう」と言うのはどういう意味ですか?", c: ["They should wait before choosing", "They must decide immediately", "They should cancel the product", "They need a bigger budget"], a: 0, x: "フォーカスグループの意見を聞くまで決定を待つべきだという意味です。" }
+  ]
+},
+{
+  t: "図書館での問い合わせ",
+  lines: [
+    { s: "M", text: "Hi, I'd like to borrow this book, but I think my library card might have expired.", jtext: "こんにちは、この本を借りたいのですが、図書館カードの有効期限が切れているかもしれません。" },
+    { s: "W", text: "Let me scan it and check. Yes, it expired last month, but I can renew it for you right now.", jtext: "スキャンして確認しますね。はい、先月切れていますが、今すぐ更新できますよ。" },
+    { s: "M", text: "Oh, that's easy. Do I need to show any identification to renew it?", jtext: "ああ、簡単ですね。更新するのに身分証明書を見せる必要はありますか?" },
+    { s: "W", text: "Just something with your current address, like a utility bill or a driver's license.", jtext: "現住所が記載されたもの、光熱費の請求書や運転免許証などがあれば大丈夫です。" },
+    { s: "M", text: "I have my license right here. By the way, how long can I keep this book?", jtext: "免許証はここにあります。ところで、この本はどのくらい借りられますか?" },
+    { s: "W", text: "Three weeks, and you can renew it online once if no one else has requested it.", jtext: "3週間です。他に予約がなければ、オンラインで一度延長できます。" },
+    { s: "M", text: "Perfect. Thanks for making this so simple.", jtext: "完璧です。とても簡単にしてくれてありがとう。" }
+  ],
+  qs: [
+    { q: "Who most likely is the woman?", jq: "女性はおそらく誰ですか?", c: ["A library staff member", "A bookstore owner", "A university professor", "A delivery driver"], a: 0, x: "カードの更新や貸出について対応していることから、図書館の職員だとわかります。" },
+    { q: "What does the woman ask the man to provide?", jq: "女性は男性に何を提示するよう求めていますか?", c: ["Proof of his address", "A membership fee", "A completed form", "A photo"], a: 0, x: "現住所が記載された書類を求めており、「something with your current address」を「Proof of his address」と言い換えています。" },
+    { q: "What does the woman say about the book?", jq: "女性は本について何と言っていますか?", c: ["It can be kept for three weeks", "It cannot be renewed", "It is due tomorrow", "It is only for reference"], a: 0, x: "本は3週間借りられ、条件付きでオンライン延長も可能だと言っています。" }
+  ]
+},
+{
+  t: "社内研修の準備 (3人)",
+  lines: [
+    { s: "W", text: "We should go over the plan for Friday's software training. How many people signed up?", jtext: "金曜のソフトウェア研修の計画を確認しておきましょう。何人申し込んだの?" },
+    { s: "M", text: "Twenty-two so far. That's more than we expected, so the small training room won't work.", jtext: "今のところ22人だ。予想より多いから、小さい研修室では無理だね。" },
+    { s: "M2", text: "I can move us to the auditorium. It seats forty and already has the projector we need.", jtext: "講堂に移せますよ。40人収容できて、必要なプロジェクターもすでに備わっています。" },
+    { s: "W", text: "That would be ideal. Ken, could you also make sure everyone has a laptop for the hands-on part?", jtext: "それは理想的ね。ケン、実習パートのために全員がノートパソコンを持っているか確認してもらえる?" },
+    { s: "M2", text: "Sure. I'll email everyone tonight and ask them to bring their own or reserve one from IT.", jtext: "もちろん。今夜全員にメールして、自分のを持参するかIT部門から借りるよう頼みます。" },
+    { s: "M", text: "And I'll print out the handouts tomorrow morning so they're ready before people arrive.", jtext: "それと、僕は明日の朝に配布資料を印刷して、参加者が来る前に準備しておくよ。" },
+    { s: "W", text: "Great teamwork. Let's meet fifteen minutes early on Friday to set everything up.", jtext: "素晴らしいチームワークね。金曜は15分早く集まって、すべてをセットアップしましょう。" }
+  ],
+  qs: [
+    { q: "What event are the speakers preparing for?", jq: "話し手は何のイベントの準備をしていますか?", c: ["A training session", "A company party", "A job fair", "A product launch"], a: 0, x: "金曜のソフトウェア研修の準備をしています。" },
+    { q: "Why do they decide to change the location?", jq: "なぜ場所を変更することにしたのですか?", c: ["More people registered than expected", "The room was double-booked", "The equipment broke down", "The building is closing"], a: 0, x: "申込者が予想より多い22人だったため、小さい研修室では対応できません。" },
+    { q: "What will the man do tomorrow morning?", jq: "男性は明日の朝に何をしますか?", c: ["Print the handout materials", "Email all the participants", "Reserve the auditorium", "Test the projector"], a: 0, x: "男性(M)は明日の朝に配布資料を印刷すると言っています。メールはM2(ケン)の担当です。" }
+  ]
+},
+{
+  t: "アパートの内見",
+  lines: [
+    { s: "W", text: "This is the one-bedroom unit I mentioned. As you can see, it gets plenty of natural light in the afternoon.", jtext: "こちらが先ほどお話しした1ベッドルームの部屋です。ご覧の通り、午後はたっぷり自然光が入ります。" },
+    { s: "M", text: "It's really bright. Is the monthly rent still fifteen hundred, including utilities?", jtext: "本当に明るいですね。家賃は光熱費込みで月1,500ドルのままですか?" },
+    { s: "W", text: "The rent is fifteen hundred, but water is included while electricity is billed separately.", jtext: "家賃は1,500ドルですが、水道は込みで、電気は別途請求になります。" },
+    { s: "M", text: "I see. And is there a laundry room in the building, or would I need to use a laundromat?", jtext: "なるほど。建物内に洗濯室はありますか、それともコインランドリーを使う必要がありますか?" },
+    { s: "W", text: "There's a shared laundry room on the ground floor, and it's free for all residents.", jtext: "1階に共用の洗濯室があり、入居者は全員無料で使えます。" },
+    { s: "M", text: "That's convenient. I'm quite interested. What do I need to do to apply?", jtext: "便利ですね。かなり興味があります。申し込むには何が必要ですか?" },
+    { s: "W", text: "Just fill out this form and provide a reference. I can hold the unit for you for two days.", jtext: "こちらのフォームに記入して、推薦者情報を提出するだけです。2日間はこの部屋をお取り置きできますよ。" }
+  ],
+  qs: [
+    { q: "What is the woman showing the man?", jq: "女性は男性に何を見せていますか?", c: ["An apartment for rent", "A new office space", "A hotel room", "A storage unit"], a: 0, x: "1ベッドルームの賃貸物件を内見案内しています。" },
+    { q: "What does the woman say is free for residents?", jq: "女性は入居者にとって何が無料だと言っていますか?", c: ["Use of the laundry facilities", "Parking spaces", "Internet service", "The electricity"], a: 0, x: "1階の共用洗濯室が入居者全員無料だと言っています。「laundry room」を「laundry facilities」と言い換えています。" },
+    { q: "What does the man need to do to apply?", jq: "男性は申し込むために何をする必要がありますか?", c: ["Complete a form and give a reference", "Pay three months of rent", "Take a credit test", "Sign a two-year lease"], a: 0, x: "フォームに記入して推薦者情報を提出する必要があります。「fill out this form」を「Complete a form」と言い換えています。" }
+  ]
+}
+];
+
+// PART4: Part 4(説明文/トーク). 各トークは { t, lines:[{s,text,jtext}], qs:[{q,jq,c,a,x}] }。
+// 1人の話者(全lineのsは同一)。トークは音声のみ、設問・選択肢は画面表示。cのa番目が正解で表示時にシャッフル。
+const PART4 = [
+{
+  t: "留守番電話メッセージ",
+  lines: [
+    { s: "M", text: "Hi, this is Daniel from Riverside Auto Service. I'm calling about the car you dropped off yesterday morning.", jtext: "こんにちは、リバーサイド・オート・サービスのダニエルです。昨日の朝お預かりしたお車の件でお電話しています。" },
+    { s: "M", text: "The good news is that we've finished replacing the brakes, and everything is working perfectly now.", jtext: "良いお知らせですが、ブレーキの交換が完了し、今はすべて問題なく作動しています。" },
+    { s: "M", text: "However, we noticed that one of your tires is quite worn and should be replaced soon for safety.", jtext: "ただ、タイヤの一つがかなりすり減っていて、安全のため近いうちに交換した方がよいことに気づきました。" },
+    { s: "M", text: "If you'd like us to take care of that today, just give me a call back before five o'clock.", jtext: "本日そちらも対応をご希望でしたら、5時までに折り返しお電話ください。" },
+    { s: "M", text: "Otherwise, your car will be ready for pickup this afternoon. Thanks, and have a great day.", jtext: "そうでなければ、お車は今日の午後に引き取り可能です。それでは、良い一日を。" }
+  ],
+  qs: [
+    { q: "Why is the speaker calling?", jq: "話し手はなぜ電話をしているのですか。", c: ["To give an update on a repair", "To reschedule an appointment", "To ask for a payment", "To apologize for a delay"], a: 0, x: "ブレーキ交換が終わったという修理の進捗を伝える電話。「update on a repair」は本文の言い換えです。" },
+    { q: "What problem does the speaker mention?", jq: "話し手はどんな問題を挙げていますか。", c: ["A tire is badly worn", "The brakes are broken", "A part is unavailable", "The engine is leaking"], a: 0, x: "タイヤの一つがすり減っていると述べています。ブレーキはすでに修理済みなので誤りです。" },
+    { q: "What does the speaker ask the listener to do?", jq: "話し手は聞き手に何をするよう頼んでいますか。", c: ["Call back before a certain time", "Visit the shop in person", "Send an email", "Bring in another vehicle"], a: 0, x: "タイヤ交換を望むなら5時までに折り返すよう頼んでいます。時間を「a certain time」と言い換えています。" }
+  ]
+},
+{
+  t: "店内アナウンス",
+  lines: [
+    { s: "W", text: "Attention, shoppers. Welcome to Greenfield Market, your neighborhood grocery store.", jtext: "お買い物中のお客様にご案内いたします。地域のスーパー、グリーンフィールド・マーケットへようこそ。" },
+    { s: "W", text: "For the next hour only, all fresh fruit in aisle four is available at half price.", jtext: "これから一時間限定で、四番通路の生の果物がすべて半額でお求めいただけます。" },
+    { s: "W", text: "This is a perfect chance to stock up on strawberries, apples, and seasonal melons.", jtext: "イチゴ、リンゴ、旬のメロンをまとめ買いする絶好の機会です。" },
+    { s: "W", text: "Also, please remember that our store will close thirty minutes earlier than usual this evening.", jtext: "また、本日の夕方は当店が通常より30分早く閉店いたしますので、ご了承ください。" },
+    { s: "W", text: "If you need any help finding an item, our friendly staff are happy to assist you. Thank you for shopping with us.", jtext: "商品をお探しの際は、親切なスタッフが喜んでお手伝いいたします。ご来店ありがとうございます。" }
+  ],
+  qs: [
+    { q: "Where is the announcement being made?", jq: "このアナウンスはどこで流れていますか。", c: ["At a grocery store", "At a department store", "At a restaurant", "At a farm"], a: 0, x: "「grocery store」であるグリーンフィールド・マーケットでのアナウンスだと冒頭で分かります。" },
+    { q: "What is being offered for a limited time?", jq: "期間限定で提供されているものは何ですか。", c: ["A discount on fresh fruit", "Free delivery service", "A membership gift", "A cooking demonstration"], a: 0, x: "一時間限定で果物が半額になると述べています。「discount」は「half price」の言い換えです。" },
+    { q: "What does the speaker say about the store today?", jq: "話し手は本日の店について何と言っていますか。", c: ["It will close earlier than usual", "It has extended its hours", "It is hiring new staff", "It has moved to a new location"], a: 0, x: "本日は通常より30分早く閉店すると案内しています。" }
+  ]
+},
+{
+  t: "ラジオ広告",
+  lines: [
+    { s: "M", text: "Are you tired of spending your weekends cleaning the house? Let Sparkle Home Services do the work for you.", jtext: "週末を家の掃除に費やすのにうんざりしていませんか?スパークル・ホーム・サービスにお任せください。" },
+    { s: "M", text: "Our trained team uses eco-friendly products to make every room shine, from the kitchen to the bathroom.", jtext: "訓練を受けたスタッフが環境に優しい製品を使い、キッチンから浴室まであらゆる部屋をピカピカにします。" },
+    { s: "M", text: "Best of all, if you book your first appointment this month, you'll receive twenty percent off.", jtext: "さらにお得なことに、今月中に初回のご予約をいただくと、20パーセント割引になります。" },
+    { s: "M", text: "Booking is quick and easy through our website or by calling our office directly.", jtext: "ご予約はウェブサイト、またはオフィスへ直接お電話いただくと、素早く簡単に行えます。" },
+    { s: "M", text: "Give yourself more free time. Visit sparklehome dot com today and enjoy a cleaner home tomorrow.", jtext: "自由な時間を増やしましょう。今すぐスパークルホーム・ドットコムをご覧いただき、明日にはきれいな家を楽しんでください。" }
+  ],
+  qs: [
+    { q: "What is being advertised?", jq: "何が宣伝されていますか。", c: ["A house cleaning service", "A furniture store", "A gardening company", "A moving service"], a: 0, x: "掃除を代行するホーム・サービスの広告です。" },
+    { q: "According to the advertisement, what is special about the products used?", jq: "広告によると、使用される製品の特徴は何ですか。", c: ["They are good for the environment", "They are made overseas", "They are sold in stores", "They have no scent"], a: 0, x: "「eco-friendly」を「good for the environment」と言い換えています。" },
+    { q: "How can listeners receive a discount?", jq: "聞き手はどうすれば割引を受けられますか。", c: ["By booking during the current month", "By referring a friend", "By paying in cash", "By signing a yearly contract"], a: 0, x: "今月中に初回予約をすると20パーセント割引になると述べています。" }
+  ]
+},
+{
+  t: "美術館ツアーの案内",
+  lines: [
+    { s: "W", text: "Good afternoon, everyone, and welcome to the Coastal Art Museum. My name is Laura, and I'll be your guide today.", jtext: "皆さん、こんにちは。コースタル美術館へようこそ。本日ガイドを務めますローラと申します。" },
+    { s: "W", text: "We'll begin our tour on the first floor, which features paintings by local artists from the past century.", jtext: "ツアーは1階から始めます。ここでは過去一世紀の地元アーティストによる絵画を展示しています。" },
+    { s: "W", text: "Please feel free to take photographs, but kindly turn off your camera flash to protect the artwork.", jtext: "写真撮影はご自由にどうぞ。ただし作品保護のため、カメラのフラッシュはお切りください。" },
+    { s: "W", text: "About halfway through, we'll stop at the café, where you can enjoy a short break before continuing upstairs.", jtext: "途中でカフェに立ち寄り、上の階へ進む前に少し休憩をお取りいただけます。" },
+    { s: "W", text: "If you have any questions along the way, don't hesitate to ask. Now, let's get started.", jtext: "途中でご質問があれば、遠慮なくお尋ねください。それでは、始めましょう。" }
+  ],
+  qs: [
+    { q: "Who most likely is the speaker?", jq: "話し手は誰だと考えられますか。", c: ["A museum tour guide", "A gift shop clerk", "An art teacher", "A photographer"], a: 0, x: "「I'll be your guide today」と述べており、美術館のツアーガイドだと分かります。" },
+    { q: "What are listeners asked to do?", jq: "聞き手は何をするよう求められていますか。", c: ["Turn off their camera flash", "Leave their bags at the entrance", "Stay with the group at all times", "Buy a ticket in advance"], a: 0, x: "作品保護のためフラッシュを切るよう求めています。" },
+    { q: "What will the group do during the tour?", jq: "グループはツアー中に何をしますか。", c: ["Take a break at a café", "Watch a short film", "Meet an artist", "Attend a workshop"], a: 0, x: "途中でカフェに立ち寄り休憩すると案内しています。" }
+  ]
+},
+{
+  t: "交通情報",
+  lines: [
+    { s: "M", text: "Good morning, drivers. Here's your eight o'clock traffic update from City Radio 90.5.", jtext: "運転中の皆さん、おはようございます。シティ・ラジオ90.5から8時の交通情報をお伝えします。" },
+    { s: "M", text: "Traffic on the main highway heading downtown is moving slowly this morning due to road construction near Exit 12.", jtext: "都心へ向かう主要高速道路は、12番出口付近の道路工事のため、今朝は流れが遅くなっています。" },
+    { s: "M", text: "Drivers should expect delays of about twenty minutes, so please leave a little earlier than usual.", jtext: "約20分の遅れが予想されますので、いつもより少し早めに出発してください。" },
+    { s: "M", text: "If possible, we recommend taking Riverside Avenue as an alternative route to avoid the congestion.", jtext: "可能であれば、渋滞を避けるためリバーサイド・アベニューを迂回路として利用することをお勧めします。" },
+    { s: "M", text: "We'll have another update for you in thirty minutes. Drive safely, everyone.", jtext: "30分後に再び最新情報をお伝えします。皆さん、安全運転を。" }
+  ],
+  qs: [
+    { q: "What is causing the delays?", jq: "遅れの原因は何ですか。", c: ["Roadwork near an exit", "A traffic accident", "Bad weather", "A special event"], a: 0, x: "12番出口付近の道路工事が原因です。「roadwork」は「road construction」の言い換えです。" },
+    { q: "What does the speaker recommend that drivers do?", jq: "話し手は運転者に何を勧めていますか。", c: ["Use a different road", "Wait until the afternoon", "Take public transportation", "Call the traffic office"], a: 0, x: "リバーサイド・アベニューという別の道を通るよう勧めています。" },
+    { q: "What will happen in thirty minutes?", jq: "30分後に何が起こりますか。", c: ["Another report will be given", "The highway will reopen", "The construction will finish", "A weather forecast will begin"], a: 0, x: "30分後に再び交通情報を伝えると述べています。" }
+  ]
+},
+{
+  t: "会議・研修の冒頭挨拶",
+  lines: [
+    { s: "W", text: "Thank you all for coming to today's workshop on improving customer communication. I'm glad to see such a full room.", jtext: "本日の顧客コミュニケーション向上ワークショップにお越しいただき、ありがとうございます。満席で嬉しく思います。" },
+    { s: "W", text: "Over the next two hours, we'll look at practical ways to respond to customer questions more clearly and quickly.", jtext: "これからの2時間で、お客様の質問により明確かつ迅速に対応する実践的な方法を見ていきます。" },
+    { s: "W", text: "First, I'll share a few common mistakes, and then we'll practice with some real examples in small groups.", jtext: "まず、よくある間違いをいくつか紹介し、その後、少人数のグループで実例を使って練習します。" },
+    { s: "W", text: "You'll each find a printed handout on your desk that summarizes the main points we'll cover.", jtext: "机の上に、これから扱う要点をまとめた印刷資料をご用意しています。" },
+    { s: "W", text: "Before we begin, please make sure your mobile phones are set to silent. Let's get started.", jtext: "始める前に、携帯電話をマナーモードに設定していることをご確認ください。それでは始めましょう。" }
+  ],
+  qs: [
+    { q: "What is the main topic of the workshop?", jq: "ワークショップの主なテーマは何ですか。", c: ["Communicating better with customers", "Designing a new product", "Managing a company budget", "Hiring new employees"], a: 0, x: "顧客とのコミュニケーション向上がテーマです。" },
+    { q: "What will participants do after the introduction?", jq: "参加者は導入の後、何をしますか。", c: ["Practice with real examples", "Watch a long video", "Take a written test", "Tour the office"], a: 0, x: "よくある間違いの紹介後、実例を使って練習すると述べています。" },
+    { q: "What does the speaker ask the participants to do?", jq: "話し手は参加者に何をするよう頼んでいますか。", c: ["Silence their phones", "Sign an attendance sheet", "Move to another room", "Collect a name badge"], a: 0, x: "始める前に携帯電話をマナーモードにするよう頼んでいます。" }
+  ]
+}
+];

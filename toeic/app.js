@@ -52,6 +52,8 @@ function defaultState() {
     part1Stats: {},  // part1Index -> { lv, next, seen, ok }(同上)
     readStats: {},   // Part 7文書セットindex -> { lv, next, seen, ok }(セット全問正解でレベルUP)
     part6Stats: {},  // Part 6長文index -> { lv, next, seen, ok }(同上)
+    part3Stats: {},  // Part 3会話index -> { lv, next, seen, ok }(会話単位・全問正解でレベルUP)
+    part4Stats: {},  // Part 4トークindex -> { lv, next, seen, ok }(トーク単位・同上)
     xp: 0,           // 累計XP(レベルはここから算出)
     gems: 0,         // 💎ジェム(宿題ではなくメタ通貨。ショップでフリーズ等と交換)
     freezes: 0,      // ❄️ストリークフリーズの在庫(最大FREEZE_MAX)。休んだ日を自動で埋める
@@ -86,7 +88,7 @@ function loadState() {
     const s = JSON.parse(raw);
     const merged = { ...defaultState(), ...s, settings: { ...defaultState().settings, ...s.settings } };
     // 旧形式(lv/nextなし)の文法・リスニング記録を間隔反復形式へ移行
-    [merged.quizStats, merged.listenStats, merged.part1Stats, merged.readStats, merged.part6Stats].forEach((stats) => {
+    [merged.quizStats, merged.listenStats, merged.part1Stats, merged.readStats, merged.part6Stats, merged.part3Stats, merged.part4Stats].forEach((stats) => {
       Object.values(stats).forEach((st) => {
         if (st.lv === undefined) {
           st.lv = st.ok > 0 ? 1 : 0;
@@ -885,8 +887,10 @@ function estimateScore() {
   const agg = aggregates();
   const p1 = pairSum(state.part1Stats);
   const p2 = pairSum(state.listenStats);
-  const listenSeen = p1.seen + p2.seen;
-  const listenOk = p1.ok + p2.ok;
+  const p3 = pairSum(state.part3Stats); // Part 3(会話): seen/okは設問数の累計
+  const p4 = pairSum(state.part4Stats); // Part 4(トーク): 同上
+  const listenSeen = p1.seen + p2.seen + p3.seen + p4.seen;
+  const listenOk = p1.ok + p2.ok + p3.ok + p4.ok;
   // リーディング: 文法・読解は等倍、語彙(単語)は基礎指標として0.5倍で反映
   const gr = pairSum(state.quizStats);
   const vo = pairSum(state.words, 0.5);
@@ -1533,6 +1537,7 @@ function pickVoice() {
 if (speechOk) {
   speechSynthesis.onvoiceschanged = () => {
     cachedVoice = null;
+    voiceMW = null;
     pickVoice();
   };
 }
@@ -1544,6 +1549,36 @@ function speak(text, rate) {
     const v = pickVoice();
     if (v) u.voice = v;
     u.rate = rate || 0.92;
+    u.onend = resolve;
+    u.onerror = resolve;
+    speechSynthesis.speak(u);
+  });
+}
+
+// 話者ごとに声を変える。別の英語音声が2つ以上あれば男女に割り当て、
+// 無ければ同じ声のピッチをずらして区別する(どの端末でも話者が聞き分けられるように)。
+let voiceMW = null; // { m, w } 男女の音声(取れれば)
+function pickVoicesMW() {
+  if (voiceMW) return voiceMW;
+  const vs = speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith("en"));
+  const w = vs.find((v) => /female|zira|samantha|susan|karen|moira|tessa|fiona|serena|catherine|hazel|linda|female|woman/i.test(v.name));
+  const m = vs.find((v) => v !== w && /male|david|daniel|alex|fred|george|mark|rishi|guy|aaron|man/i.test(v.name));
+  voiceMW = { m: m || null, w: w || null };
+  return voiceMW;
+}
+// 話者→ピッチ(声の割り当てが無い端末でも聞き分けられるように)
+const SPEAKER_PITCH = { W: 1.28, W2: 1.45, M: 0.82, M2: 0.68, N: 1.0 };
+
+function speakAs(text, speaker, rate) {
+  return new Promise((resolve) => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    const mw = pickVoicesMW();
+    const isW = speaker === "W" || speaker === "W2";
+    const assigned = isW ? mw.w : (speaker === "M" || speaker === "M2") ? mw.m : null;
+    u.voice = assigned || pickVoice() || null;
+    u.rate = rate || 0.95;
+    u.pitch = SPEAKER_PITCH[speaker] !== undefined ? SPEAKER_PITCH[speaker] : 1.0;
     u.onend = resolve;
     u.onerror = resolve;
     speechSynthesis.speak(u);
@@ -1626,6 +1661,8 @@ function renderListenStart() {
   document.getElementById("listen-start").classList.remove("hidden");
   document.getElementById("listen-session").classList.add("hidden");
   document.getElementById("listen-result").classList.add("hidden");
+  document.getElementById("listen34-session").classList.add("hidden");
+  document.getElementById("listen34-result").classList.add("hidden");
   document.getElementById("listen-warn").classList.toggle("hidden", speechOk);
   // Part 1 / Part 2 それぞれの復習・新規数と定着度バー
   const p1 = listenDueNewCounts(PART1, state.part1Stats);
@@ -1636,6 +1673,15 @@ function renderListenStart() {
   document.getElementById("part2-summary").innerHTML =
     `復習する問題: <strong>${p2.due}</strong> 問 ／ 新しい問題: <strong>${p2.fresh}</strong> 問(全${PART2.length}問)`;
   renderRetentionBar("part2-retention-bar", srsRetentionCounts(PART2.length, state.listenStats), PART2.length);
+  // Part 3(会話)/ Part 4(トーク)は会話/トーク単位の復習・新規数と定着度バー
+  const p3 = l34SectionCounts(PART3, state.part3Stats);
+  document.getElementById("part3-summary").innerHTML =
+    `復習する会話: <strong>${p3.due}</strong> 本 ／ 新しい会話: <strong>${p3.fresh}</strong> 本(全${PART3.length}本・${setsQCount(PART3)}問)`;
+  renderRetentionBar("part3-retention-bar", srsRetentionCounts(PART3.length, state.part3Stats), PART3.length);
+  const p4 = l34SectionCounts(PART4, state.part4Stats);
+  document.getElementById("part4-summary").innerHTML =
+    `復習するトーク: <strong>${p4.due}</strong> 本 ／ 新しいトーク: <strong>${p4.fresh}</strong> 本(全${PART4.length}本・${setsQCount(PART4)}問)`;
+  renderRetentionBar("part4-retention-bar", srsRetentionCounts(PART4.length, state.part4Stats), PART4.length);
 }
 
 function startListen(mode) {
@@ -1810,6 +1856,244 @@ document.getElementById("listen-start-btn").addEventListener("click", () => star
 document.getElementById("listen-again-btn").addEventListener("click", () => startListen(listenMode));
 document.getElementById("listen-play-btn").addEventListener("click", playListenAudio);
 document.getElementById("listen-next-btn").addEventListener("click", nextListenQuestion);
+
+// ---- リスニング Part 3(会話)/ Part 4(トーク)----
+// 構造は読解セットと同じ「音声(会話/トーク)+ 複数設問」を1単位に。
+// 本番同様、会話/トークは音声のみ(画面に出さない)。設問と選択肢は文字で表示する
+// (Part 3/4は設問・選択肢が問題冊子に印刷されている形式)。SRSは会話/トーク単位。
+// log.listen / listenOk に加算し、ノルマ・推定Listeningスコア・週間クエストに反映。
+
+const L34_SET_SIZE = 2; // 1セッションで扱う会話/トーク数
+let l34Section = 3;     // 3 = Part 3(会話), 4 = Part 4(トーク)
+let l34Queue = [], l34Pos = 0, l34QPos = 0;
+let l34Correct = 0, l34Total = 0, l34Combo = 0, l34SetCorrect = 0, l34SetOk = true, l34Order = [];
+
+function l34Sets() { return l34Section === 3 ? PART3 : PART4; }
+function l34Stats() { return l34Section === 3 ? state.part3Stats : state.part4Stats; }
+function currentL34Set() { return l34Sets()[l34Queue[l34Pos]]; }
+function spkLabel(s) { return ({ M: "男性", W: "女性", M2: "男性2", W2: "女性2", N: "ナレーター" })[s] || s; }
+
+function buildL34Queue() {
+  const sets = l34Sets();
+  const stats = l34Stats();
+  const size = Math.min(L34_SET_SIZE, sets.length);
+  const today = todayKey();
+  const due = [], fresh = [], future = [];
+  sets.forEach((_, i) => {
+    const st = stats[i];
+    if (!st || st.seen === 0) fresh.push(i);
+    else if (st.next <= today) due.push(i);
+    else future.push(i);
+  });
+  due.sort((a, b) => stats[a].lv - stats[b].lv);
+  shuffleArray(fresh);
+  const newSlots = Math.min(fresh.length, Math.max(1, Math.round(size * 0.5)));
+  const queue = fresh.splice(0, newSlots);
+  while (queue.length < size && due.length > 0) queue.push(due.shift());
+  while (queue.length < size && fresh.length > 0) queue.push(fresh.shift());
+  if (queue.length < size) {
+    future.sort((a, b) => (stats[a].next < stats[b].next ? -1 : 1));
+    while (queue.length < size && future.length > 0) queue.push(future.shift());
+  }
+  return shuffleArray(queue);
+}
+
+function l34SectionCounts(sets, stats) {
+  const today = todayKey();
+  let due = 0, fresh = 0;
+  sets.forEach((_, i) => {
+    const st = stats[i];
+    if (!st || st.seen === 0) fresh++;
+    else if (st.next <= today) due++;
+  });
+  return { due, fresh };
+}
+
+async function playL34Audio() {
+  if (!speechOk) return;
+  audioStarted = true;
+  const token = ++playToken;
+  speechSynthesis.cancel();
+  await wait(200);
+  if (token !== playToken) return;
+  const set = currentL34Set();
+  await speakAs(l34Section === 3 ? "Listen to the following conversation." : "Listen to the following talk.", "N", 1.0);
+  if (token !== playToken) return;
+  await wait(500);
+  for (const line of set.lines) {
+    if (token !== playToken) return;
+    await speakAs(line.text, line.s);
+    if (token !== playToken) return;
+    await wait(320);
+  }
+}
+
+function renderL34Transcript() {
+  const set = currentL34Set();
+  const box = document.getElementById("listen34-transcript");
+  box.innerHTML = "";
+  set.lines.forEach((line) => {
+    const p = document.createElement("p");
+    p.className = "l34-line";
+    p.innerHTML = `<span class="l34-spk">${spkLabel(line.s)}:</span> ${escapeHtml(line.text)}`;
+    box.appendChild(p);
+  });
+  // 音声が使える端末では非表示(聞いて解く)。使えない端末はスクリプトを表示して読解形式に。
+  box.classList.toggle("hidden", speechOk);
+  document.getElementById("listen34-listening").classList.toggle("hidden", !speechOk);
+}
+
+function startListen34(section) {
+  l34Section = section;
+  if (l34Sets().length === 0) return;
+  // iOS Safari対策: タップ直下で空発話して音声を有効化
+  if (speechOk) { audioStarted = true; speechSynthesis.speak(new SpeechSynthesisUtterance("")); }
+  l34Queue = buildL34Queue();
+  if (l34Queue.length === 0) return;
+  l34Pos = 0; l34Correct = 0; l34Total = 0; l34Combo = 0; sessionXp = 0;
+  document.getElementById("listen-start").classList.add("hidden");
+  document.getElementById("listen34-result").classList.add("hidden");
+  document.getElementById("listen34-session").classList.remove("hidden");
+  startNewL34Set();
+}
+
+function startNewL34Set() {
+  l34QPos = 0; l34SetOk = true; l34SetCorrect = 0;
+  renderL34Transcript();
+  playL34Audio();
+  showL34Question();
+  window.scrollTo(0, 0);
+}
+
+function showL34Question() {
+  const set = currentL34Set();
+  const q = set.qs[l34QPos];
+  document.getElementById("listen34-progress").textContent =
+    `Part ${l34Section}　${l34Section === 3 ? "会話" : "トーク"} ${l34Pos + 1}/${l34Queue.length}　設問 ${l34QPos + 1}/${set.qs.length}`;
+  document.getElementById("listen34-question").textContent = q.q;
+  document.getElementById("listen34-feedback").classList.add("hidden");
+  l34Order = q.c.map((_, i) => i);
+  shuffleArray(l34Order);
+  const box = document.getElementById("listen34-choices");
+  box.innerHTML = "";
+  const labels = ["(A)", "(B)", "(C)", "(D)"];
+  l34Order.forEach((orig, pos) => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.dataset.orig = orig;
+    btn.textContent = `${labels[pos]} ${q.c[orig]}`;
+    btn.addEventListener("click", () => answerL34(orig, btn));
+    box.appendChild(btn);
+  });
+}
+
+function answerL34(chosen, btn) {
+  stopListenAudio(); // 会話/トークの再生を止める
+  const set = currentL34Set();
+  const q = set.qs[l34QPos];
+  const correct = chosen === q.a;
+  if (correct) { l34Combo++; seCorrect(l34Combo); }
+  else { l34Combo = 0; l34SetOk = false; seWrong(); }
+  const gained = correct ? (l34Combo >= 3 ? 15 : 10) : 2;
+  addXp(gained);
+  document.querySelectorAll("#listen34-choices .choice-btn").forEach((b) => {
+    b.disabled = true;
+    if (Number(b.dataset.orig) === q.a) b.classList.add("correct");
+  });
+  if (!correct) btn.classList.add("wrong");
+
+  l34Total++;
+  if (correct) { l34Correct++; l34SetCorrect++; }
+  const log = todayLog();
+  log.listen = (log.listen || 0) + 1;
+  if (correct) {
+    log.listenOk = (log.listenOk || 0) + 1;
+    log.maxCombo = Math.max(log.maxCombo || 0, l34Combo);
+  }
+  saveState();
+  checkDailyChallenges();
+
+  const verdict = document.getElementById("listen34-verdict");
+  verdict.textContent = correct
+    ? `正解! ⭕ +${gained}XP${l34Combo >= 2 ? ` 🔥${l34Combo}連続!` : ""}`
+    : "残念… ❌ +2XP";
+  verdict.className = `quiz-verdict ${correct ? "good" : "bad"}`;
+  document.getElementById("listen34-type").textContent = `Part ${l34Section} ・ ${set.t}`;
+
+  const script = document.getElementById("listen34-script");
+  script.innerHTML = "";
+  set.lines.forEach((line) => {
+    const p = document.createElement("p");
+    p.className = "script-line";
+    p.innerHTML = `<strong>${spkLabel(line.s)}:</strong> ${escapeHtml(line.text)}<br><span>${escapeHtml(line.jtext || "")}</span>`;
+    script.appendChild(p);
+  });
+  const qLine = document.createElement("p");
+  qLine.className = "script-q";
+  qLine.innerHTML = `<strong>${escapeHtml(q.q)}</strong><br><span>${escapeHtml(q.jq || "")}</span><br>正解: ${escapeHtml(q.c[q.a])}`;
+  script.appendChild(qLine);
+
+  document.getElementById("listen34-explanation").textContent = q.x;
+  const isLastQ = l34QPos + 1 >= set.qs.length;
+  const isLastSet = l34Pos + 1 >= l34Queue.length;
+  document.getElementById("listen34-next-btn").textContent =
+    !isLastQ ? "次の設問へ" : (isLastSet ? "結果を見る" : (l34Section === 3 ? "次の会話へ" : "次のトークへ"));
+  document.getElementById("listen34-feedback").classList.remove("hidden");
+}
+
+function finalizeL34Set() {
+  const stats = l34Stats();
+  const idx = l34Queue[l34Pos];
+  const set = l34Sets()[idx];
+  const st = stats[idx] || { lv: 0, next: todayKey(), seen: 0, ok: 0 };
+  st.seen += set.qs.length;   // 設問数を加算(推定スコアの正答率算出に使用)
+  st.ok += l34SetCorrect;
+  if (l34SetOk) st.lv = Math.min(MAX_LEVEL, st.lv + 1); // 全問正解でレベルUP
+  else st.lv = 0;
+  st.next = addDays(todayKey(), INTERVALS[st.lv]);
+  stats[idx] = st;
+  saveState();
+}
+
+function nextL34Question() {
+  const set = currentL34Set();
+  if (l34QPos + 1 < set.qs.length) { l34QPos++; showL34Question(); return; }
+  finalizeL34Set();
+  if (l34Pos + 1 < l34Queue.length) { l34Pos++; startNewL34Set(); }
+  else finishL34();
+}
+
+function finishL34() {
+  stopListenAudio();
+  seFinish();
+  const pct = l34Total > 0 ? Math.round((l34Correct / l34Total) * 100) : 0;
+  addXp(20 + (pct === 100 ? 30 : 0));
+  if (pct === 100) { const log = todayLog(); log.perfects = (log.perfects || 0) + 1; }
+  saveState();
+  checkDailyChallenges();
+  document.getElementById("listen34-session").classList.add("hidden");
+  document.getElementById("listen34-result").classList.remove("hidden");
+  const emoji = pct === 100 ? "👑" : pct >= 80 ? "🏆" : pct >= 60 ? "🎉" : "🎧";
+  const title = pct === 100 ? "パーフェクト!!" : pct >= 80 ? "すばらしい!" : pct >= 60 ? "その調子!" : "スクリプトを復習しよう";
+  document.getElementById("listen34-result-emoji").textContent = emoji;
+  document.getElementById("listen34-result-title").textContent = title;
+  document.getElementById("listen34-result-text").innerHTML =
+    `${l34Total}問中 <strong>${l34Correct}</strong> 問正解(${pct}%)<br>間違えた${l34Section === 3 ? "会話" : "トーク"}は次のセットにも出やすくなります。` +
+    `<br>獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
+  if (pct === 100) confetti();
+  maybeCelebrateGoal();
+}
+
+const _p3btn = document.getElementById("part3-start-btn");
+if (_p3btn) _p3btn.addEventListener("click", () => startListen34(3));
+const _p4btn = document.getElementById("part4-start-btn");
+if (_p4btn) _p4btn.addEventListener("click", () => startListen34(4));
+const _l34again = document.getElementById("listen34-again-btn");
+if (_l34again) _l34again.addEventListener("click", () => startListen34(l34Section));
+const _l34play = document.getElementById("listen34-play-btn");
+if (_l34play) _l34play.addEventListener("click", playL34Audio);
+const _l34next = document.getElementById("listen34-next-btn");
+if (_l34next) _l34next.addEventListener("click", nextL34Question);
 
 // ---- 読解 (Part 6: 長文穴埋め / Part 7: 文書読解) ----
 // 読解タブは2セクション。どちらも「文書(セット)+ 複数設問」を1単位として扱う。
@@ -2254,20 +2538,30 @@ function renderStats() {
       listenByType[q.t].ok += st.ok;
     });
   });
+  // Part 3(会話)/ Part 4(トーク)の設問数累計をタイプ別集計と全体に加える
+  [["Part 3 会話", state.part3Stats], ["Part 4 トーク", state.part4Stats]].forEach(([label, stats]) => {
+    const s = pairSum(stats);
+    if (s.seen > 0) {
+      listenSeen += s.seen;
+      listenOk += s.ok;
+      listenByType[label] = { seen: s.seen, ok: s.ok };
+    }
+  });
   document.getElementById("accuracy-listen-total").textContent =
     listenSeen > 0 ? `全体: ${Math.round((listenOk / listenSeen) * 100)}%(${listenSeen}問解答)` : "まだリスニングを解いていません";
-  // リスニングの定着度(Part 1 + Part 2 合算、単語・文法と同じ忘却曲線ベース)
-  const l1 = srsRetentionCounts(PART1.length, state.part1Stats);
-  const l2 = srsRetentionCounts(PART2.length, state.listenStats);
-  const listenRet = {
-    mature: l1.mature + l2.mature,
-    young: l1.young + l2.young,
-    learning: l1.learning + l2.learning,
-    fresh: l1.fresh + l2.fresh,
-  };
-  renderRetentionBar("stats-listen-retention-bar", listenRet, PART1.length + PART2.length);
-  document.getElementById("stats-listen-retention-text").textContent = retentionText(listenRet);
-  renderForecast("listen-forecast-chart", [state.part1Stats, state.listenStats]);
+  // リスニングの定着度(Part 1〜4 合算、単語・文法と同じ忘却曲線ベース。Part 3/4は会話・トーク単位)
+  const lretParts = [
+    srsRetentionCounts(PART1.length, state.part1Stats),
+    srsRetentionCounts(PART2.length, state.listenStats),
+    srsRetentionCounts(PART3.length, state.part3Stats),
+    srsRetentionCounts(PART4.length, state.part4Stats),
+  ];
+  const listenRet = lretParts.reduce(
+    (a, c) => ({ mature: a.mature + c.mature, young: a.young + c.young, learning: a.learning + c.learning, fresh: a.fresh + c.fresh }),
+    { mature: 0, young: 0, learning: 0, fresh: 0 });
+  renderRetentionBar("stats-listen-retention-bar", listenRet, PART1.length + PART2.length + PART3.length + PART4.length);
+  document.getElementById("stats-listen-retention-text").textContent = retentionText(listenRet) + "(Part 1〜4)";
+  renderForecast("listen-forecast-chart", [state.part1Stats, state.listenStats, state.part3Stats, state.part4Stats]);
   const listenAccList = document.getElementById("accuracy-listen-list");
   listenAccList.innerHTML = "";
   Object.entries(listenByType)
@@ -2409,6 +2703,8 @@ document.getElementById("reset-btn").addEventListener("click", () => {
   state.part1Stats = {};
   state.readStats = {};
   state.part6Stats = {};
+  state.part3Stats = {};
+  state.part4Stats = {};
   state.log = {};
   state.gems = 0;
   state.freezes = 0;

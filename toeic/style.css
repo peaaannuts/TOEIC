@@ -922,3 +922,29 @@ dialog label.check-row input {
   border-radius: 5px;
   transition: width 0.5s;
 }
+
+/* ---- リスニング Part 3 / Part 4(会話・トーク) ---- */
+.l34-listening {
+  text-align: center;
+  color: var(--sub);
+  font-size: 13px;
+  margin: 4px 0 12px;
+}
+.read-transcript {
+  background: var(--accent-light);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.l34-line { margin: 0 0 6px; font-size: 14px; line-height: 1.6; }
+.l34-line:last-child { margin-bottom: 0; }
+.l34-spk { font-weight: 700; color: var(--accent); margin-right: 4px; }
+.l34-script-details { margin: 8px 0; }
+.l34-script-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  padding: 4px 0;
+}
+.l34-script-details .listen-script { margin-top: 8px; }

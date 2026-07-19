@@ -262,7 +262,29 @@
         </div>
         <button class="big-btn" id="listen-start-btn">Part 2 をはじめる(1セット10問)</button>
       </div>
-      <p class="hint">本番と同じく英文は画面に表示されません。<br>聞き取れなかったら 🔊 でもう一度聞けます。<br>音が出ない場合は端末のマナーモードを確認してください。</p>
+      <div class="card">
+        <h2 class="card-title">Part 3 会話問題</h2>
+        <p class="words-summary" id="part3-summary"></p>
+        <div class="retention-bar" id="part3-retention-bar">
+          <div class="ret-seg ret-mature"></div>
+          <div class="ret-seg ret-young"></div>
+          <div class="ret-seg ret-learning"></div>
+          <div class="ret-seg ret-new"></div>
+        </div>
+        <button class="big-btn" id="part3-start-btn">Part 3 をはじめる(会話2本)</button>
+      </div>
+      <div class="card">
+        <h2 class="card-title">Part 4 説明文問題</h2>
+        <p class="words-summary" id="part4-summary"></p>
+        <div class="retention-bar" id="part4-retention-bar">
+          <div class="ret-seg ret-mature"></div>
+          <div class="ret-seg ret-young"></div>
+          <div class="ret-seg ret-learning"></div>
+          <div class="ret-seg ret-new"></div>
+        </div>
+        <button class="big-btn" id="part4-start-btn">Part 4 をはじめる(トーク2本)</button>
+      </div>
+      <p class="hint">本番と同じく英文(会話・トーク)は画面に表示されません。設問と選択肢は文字で表示されます。<br>聞き取れなかったら 🔊 でもう一度聞けます。<br>音が出ない場合は端末のマナーモードを確認してください。</p>
     </div>
 
     <!-- 出題画面 -->
@@ -289,6 +311,36 @@
         <h2 class="card-title" id="listen-result-title"></h2>
         <p class="result-text" id="listen-result-text"></p>
         <button class="big-btn" id="listen-again-btn">もう1セット</button>
+        <button class="big-btn secondary" data-goto="home">ホームへ戻る</button>
+      </div>
+    </div>
+
+    <!-- Part 3/4 出題画面(会話・トーク) -->
+    <div id="listen34-session" class="hidden">
+      <p class="session-progress" id="listen34-progress"></p>
+      <div class="card">
+        <button class="replay-btn" id="listen34-play-btn">🔊 もう一度聞く</button>
+        <p class="l34-listening" id="listen34-listening">🎧 音声を聞いて設問に答えましょう</p>
+        <div class="read-transcript hidden" id="listen34-transcript"></div>
+        <p class="quiz-question" id="listen34-question"></p>
+        <div class="quiz-choices" id="listen34-choices"></div>
+        <div class="quiz-feedback hidden" id="listen34-feedback">
+          <p class="quiz-verdict" id="listen34-verdict"></p>
+          <p class="quiz-type" id="listen34-type"></p>
+          <details class="l34-script-details"><summary>スクリプトと和訳を見る</summary><div class="listen-script" id="listen34-script"></div></details>
+          <p class="quiz-explanation" id="listen34-explanation"></p>
+          <button class="big-btn" id="listen34-next-btn">次の設問へ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Part 3/4 結果画面 -->
+    <div id="listen34-result" class="hidden">
+      <div class="card result-card">
+        <p class="result-emoji" id="listen34-result-emoji">🎉</p>
+        <h2 class="card-title" id="listen34-result-title"></h2>
+        <p class="result-text" id="listen34-result-text"></p>
+        <button class="big-btn" id="listen34-again-btn">もう1セット</button>
         <button class="big-btn secondary" data-goto="home">ホームへ戻る</button>
       </div>
     </div>
