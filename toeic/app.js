@@ -5,7 +5,8 @@ const STORAGE_KEY = "toeic600-v1";
 // 復習間隔(日): レベルが上がるほど間隔が延びる(単語・文法クイズ共通)
 const INTERVALS = [0, 1, 3, 7, 14];
 const MAX_LEVEL = INTERVALS.length - 1;
-const MASTERED_LEVEL = 3; // このレベル以上を「習得」とみなす
+const MASTERED_LEVEL = 4; // このレベル(最上位=14日間隔まで到達)を「習得」とみなす。
+                          // 記録タブの「習得済み(間隔14日)」と定義を統一(lv3=7日間隔は「定着中」扱い)
 const QUIZ_SET_SIZE = 10;
 
 // ---- ストリーク & 通貨(継続の仕組み) ----

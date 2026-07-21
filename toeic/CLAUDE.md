@@ -202,7 +202,9 @@ Duolingoのリサーチを踏まえ、「明日も開かせる」外殻を強化
 ## プレビュー検証で踏んだ地雷(次回も起きうる)
 
 - **Service Workerキャッシュ**: `data.js`/`app.js` を編集したら `sw.js` の `CACHE_NAME` を必ずインクリメント
-  (現在 `toeic600-v33`)。プレビューで検証する際は `navigator.serviceWorker.getRegistrations()` から
+  (現在 `toeic600-v34`。2026-07-18: `MASTERED_LEVEL` を 3→4 に変更。「習得」を最上位lv4=14日間隔到達に統一し、
+  ホームの「習得した単語」カウンター・実績(単語コレクター50/単語マスター150)の基準を記録タブの
+  「習得済み(間隔14日)」と一致させた。実績がゆるすぎた問題の修正。獲得済みバッジは剥奪されない)。プレビューで検証する際は `navigator.serviceWorker.getRegistrations()` から
   `update()` を呼んで反映を待つ必要がある(でないと古いコードのまま)。
 - **プレビューのscreenshotツールがしばしばタイムアウトする**(このセッション中に複数回発生)。
   そのときは `preview_inspect` / `javascript_tool` でDOM状態や算出スタイルを直接検査する方が確実。
