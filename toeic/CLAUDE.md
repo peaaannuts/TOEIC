@@ -175,8 +175,12 @@ Duolingoのリサーチを踏まえ、「明日も開かせる」外殻を強化
   文字で表示(Part 3/4は設問・選択肢が問題冊子に印刷されている形式)。音声が使えない端末では
   `#listen34-transcript` にスクリプトを表示して読解形式にフォールバック。
 - **エンジン**: `l34Section`(3/4)で `PART3`/`PART4`・`part3Stats`/`part4Stats` を切替。
-  `buildL34Queue`/`showL34Question`/`answerL34`/`finalizeL34Set`/`finishL34` は読解の対応関数のミラー。
-  1セッション=2会話/2トーク(`L34_SET_SIZE`)。
+  `buildL34Queue`/`renderL34Questions`/`gradeL34Set`/`finalizeL34Set`/`finishL34`。1セッション=2会話/2トーク(`L34_SET_SIZE`)。
+- **出題フロー(2026-07-18に本番形式へ修正)**: 本番同様、**音声は1回だけ**流し、その会話/トークに対する
+  **全設問(3問)を同時表示**する。1問ずつの即時採点はしない。ユーザーが全問を選んでから「答え合わせ」
+  (`#listen34-check-btn`、全問未回答の間は disabled)を押すと `gradeL34Set()` がまとめて採点し、各設問に
+  正誤・解説・スクリプトを表示する。選択状態は `l34Selections`/`l34Orders`/`l34Graded` で管理
+  (以前の1問ずつ表示 `showL34Question`/`answerL34` は廃止)。
 - **SRS**: 会話/トーク単位(読解と同じ)。全問正解でレベルUP、1問でも誤りでレベル0。
   `state.part3Stats`/`part4Stats` の `{lv,next,seen,ok}` で、**seen/okは設問数の累計**を持たせている
   (`finalizeL34Set` で `seen += qs.length; ok += 正解数`)。これで `pairSum` による正答率算出に使える。
@@ -202,7 +206,7 @@ Duolingoのリサーチを踏まえ、「明日も開かせる」外殻を強化
 ## プレビュー検証で踏んだ地雷(次回も起きうる)
 
 - **Service Workerキャッシュ**: `data.js`/`app.js` を編集したら `sw.js` の `CACHE_NAME` を必ずインクリメント
-  (現在 `toeic600-v34`。2026-07-18: `MASTERED_LEVEL` を 3→4 に変更。「習得」を最上位lv4=14日間隔到達に統一し、
+  (現在 `toeic600-v35`。2026-07-18: `MASTERED_LEVEL` を 3→4 に変更。「習得」を最上位lv4=14日間隔到達に統一し、
   ホームの「習得した単語」カウンター・実績(単語コレクター50/単語マスター150)の基準を記録タブの
   「習得済み(間隔14日)」と一致させた。実績がゆるすぎた問題の修正。獲得済みバッジは剥奪されない)。プレビューで検証する際は `navigator.serviceWorker.getRegistrations()` から
   `update()` を呼んで反映を待つ必要がある(でないと古いコードのまま)。

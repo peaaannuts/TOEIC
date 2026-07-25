@@ -980,3 +980,12 @@ dialog label.check-row input {
   font-weight: 700;
 }
 .l34-table tbody tr:nth-child(even) td { background: #f3f8fa; }
+
+/* ---- Part 3/4 一括出題(音声1回 → 全設問同時表示 → まとめて答え合わせ) ---- */
+.l34-qblock { margin-bottom: 16px; }
+.l34-qblock + .l34-qblock { padding-top: 14px; border-top: 1px solid #eef2f4; }
+.l34-q { margin: 0 0 8px; font-size: 15px; font-weight: 700; line-height: 1.5; }
+.choice-btn.selected { border-color: var(--accent); background: var(--accent-light); font-weight: 700; }
+.l34-exp { margin: 8px 0 0; }
+.l34-exp-jq { color: var(--sub); font-size: 12px; }
+.big-btn:disabled { opacity: 0.5; cursor: not-allowed; }

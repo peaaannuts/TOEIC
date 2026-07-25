@@ -1866,8 +1866,9 @@ document.getElementById("listen-next-btn").addEventListener("click", nextListenQ
 
 const L34_SET_SIZE = 2; // 1セッションで扱う会話/トーク数
 let l34Section = 3;     // 3 = Part 3(会話), 4 = Part 4(トーク)
-let l34Queue = [], l34Pos = 0, l34QPos = 0;
-let l34Correct = 0, l34Total = 0, l34Combo = 0, l34SetCorrect = 0, l34SetOk = true, l34Order = [];
+let l34Queue = [], l34Pos = 0;
+let l34Correct = 0, l34Total = 0, l34Combo = 0, l34SetCorrect = 0, l34SetOk = true;
+let l34Selections = [], l34Orders = [], l34Graded = false;
 
 function l34Sets() { return l34Section === 3 ? PART3 : PART4; }
 function l34Stats() { return l34Section === 3 ? state.part3Stats : state.part4Stats; }
@@ -1985,69 +1986,118 @@ function renderL34Graphic() {
 }
 
 function startNewL34Set() {
-  l34QPos = 0; l34SetOk = true; l34SetCorrect = 0;
+  const set = currentL34Set();
+  l34SetOk = true; l34SetCorrect = 0; l34Graded = false;
+  l34Selections = new Array(set.qs.length).fill(-1);
+  l34Orders = set.qs.map((q) => shuffleArray(q.c.map((_, i) => i)));
+  document.getElementById("listen34-progress").textContent =
+    `Part ${l34Section}　${l34Section === 3 ? "会話" : "トーク"} ${l34Pos + 1}/${l34Queue.length}　(${set.qs.length}問)`;
   renderL34Transcript();
   renderL34Graphic();
+  renderL34Questions();
+  document.getElementById("listen34-setfeedback").classList.add("hidden");
+  const chk = document.getElementById("listen34-check-btn");
+  chk.classList.remove("hidden");
+  chk.disabled = true;
+  chk.textContent = "全問に答えてね";
   playL34Audio();
-  showL34Question();
   window.scrollTo(0, 0);
 }
 
-function showL34Question() {
+// 本番同様、音声は1回だけ流し、その会話/トークに対する全設問を同時に表示する。
+// すべて選んでから「答え合わせ」でまとめて採点する(1問ずつ即時採点はしない)。
+function renderL34Questions() {
   const set = currentL34Set();
-  const q = set.qs[l34QPos];
-  document.getElementById("listen34-progress").textContent =
-    `Part ${l34Section}　${l34Section === 3 ? "会話" : "トーク"} ${l34Pos + 1}/${l34Queue.length}　設問 ${l34QPos + 1}/${set.qs.length}`;
-  document.getElementById("listen34-question").textContent = q.q;
-  document.getElementById("listen34-feedback").classList.add("hidden");
-  l34Order = q.c.map((_, i) => i);
-  shuffleArray(l34Order);
-  const box = document.getElementById("listen34-choices");
+  const box = document.getElementById("listen34-questions");
   box.innerHTML = "";
   const labels = ["(A)", "(B)", "(C)", "(D)"];
-  l34Order.forEach((orig, pos) => {
-    const btn = document.createElement("button");
-    btn.className = "choice-btn";
-    btn.dataset.orig = orig;
-    btn.textContent = `${labels[pos]} ${q.c[orig]}`;
-    btn.addEventListener("click", () => answerL34(orig, btn));
-    box.appendChild(btn);
+  set.qs.forEach((q, qi) => {
+    const block = document.createElement("div");
+    block.className = "l34-qblock";
+    const qp = document.createElement("p");
+    qp.className = "l34-q";
+    qp.textContent = `Q${qi + 1}. ${q.q}`;
+    block.appendChild(qp);
+    const ch = document.createElement("div");
+    ch.className = "quiz-choices";
+    l34Orders[qi].forEach((orig, pos) => {
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.dataset.orig = orig;
+      btn.textContent = `${labels[pos]} ${q.c[orig]}`;
+      btn.addEventListener("click", () => selectL34(qi, orig, btn));
+      ch.appendChild(btn);
+    });
+    block.appendChild(ch);
+    const exp = document.createElement("p");
+    exp.className = "quiz-explanation l34-exp hidden";
+    block.appendChild(exp);
+    box.appendChild(block);
   });
 }
 
-function answerL34(chosen, btn) {
-  stopListenAudio(); // 会話/トークの再生を止める
-  const set = currentL34Set();
-  const q = set.qs[l34QPos];
-  const correct = chosen === q.a;
-  if (correct) { l34Combo++; seCorrect(l34Combo); }
-  else { l34Combo = 0; l34SetOk = false; seWrong(); }
-  const gained = correct ? (l34Combo >= 3 ? 15 : 10) : 2;
-  addXp(gained);
-  document.querySelectorAll("#listen34-choices .choice-btn").forEach((b) => {
-    b.disabled = true;
-    if (Number(b.dataset.orig) === q.a) b.classList.add("correct");
-  });
-  if (!correct) btn.classList.add("wrong");
+// 採点前: 選択を記録して該当ブロック内でハイライト(正誤はまだ見せない)
+function selectL34(qi, orig, btn) {
+  if (l34Graded) return;
+  l34Selections[qi] = orig;
+  const block = btn.closest(".l34-qblock");
+  block.querySelectorAll(".choice-btn").forEach((b) => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  const allAnswered = l34Selections.every((s) => s >= 0);
+  const chk = document.getElementById("listen34-check-btn");
+  chk.disabled = !allAnswered;
+  chk.textContent = allAnswered ? "答え合わせ" : "全問に答えてね";
+}
 
-  l34Total++;
-  if (correct) { l34Correct++; l34SetCorrect++; }
-  const log = todayLog();
-  log.listen = (log.listen || 0) + 1;
-  if (correct) {
-    log.listenOk = (log.listenOk || 0) + 1;
-    log.maxCombo = Math.max(log.maxCombo || 0, l34Combo);
-  }
+// 「答え合わせ」: 全設問をまとめて採点し、各設問に正誤と解説を表示
+function gradeL34Set() {
+  if (l34Graded || l34Selections.some((s) => s < 0)) return;
+  l34Graded = true;
+  stopListenAudio();
+  const set = currentL34Set();
+  const blocks = document.querySelectorAll("#listen34-questions .l34-qblock");
+  let setCorrect = 0, anyWrong = false;
+  set.qs.forEach((q, qi) => {
+    const chosen = l34Selections[qi];
+    const correct = chosen === q.a;
+    if (correct) { l34Combo++; setCorrect++; } else { l34Combo = 0; anyWrong = true; }
+    addXp(correct ? (l34Combo >= 3 ? 15 : 10) : 2);
+    const block = blocks[qi];
+    block.querySelectorAll(".choice-btn").forEach((b) => {
+      b.disabled = true;
+      b.classList.remove("selected");
+      const o = Number(b.dataset.orig);
+      if (o === q.a) b.classList.add("correct");
+      else if (o === chosen) b.classList.add("wrong");
+    });
+    const exp = block.querySelector(".l34-exp");
+    exp.innerHTML = `<strong>${correct ? "⭕ 正解" : "❌ 不正解"}</strong> ／ ${escapeHtml(q.x)}` +
+      (q.jq ? `<br><span class="l34-exp-jq">${escapeHtml(q.jq)}</span>` : "");
+    exp.classList.remove("hidden");
+    l34Total++;
+    if (correct) l34Correct++;
+    const log = todayLog();
+    log.listen = (log.listen || 0) + 1;
+    if (correct) { log.listenOk = (log.listenOk || 0) + 1; log.maxCombo = Math.max(log.maxCombo || 0, l34Combo); }
+  });
+  l34SetCorrect = setCorrect;
+  l34SetOk = !anyWrong;
+  if (setCorrect === set.qs.length) seCorrect(3);
+  else if (setCorrect > 0) seCorrect(1);
+  else seWrong();
   saveState();
   checkDailyChallenges();
+  finalizeL34Set(); // 会話/トーク単位のSRSを確定
+  renderL34Script();
+  document.getElementById("listen34-check-btn").classList.add("hidden");
+  document.getElementById("listen34-setfeedback").classList.remove("hidden");
+  const isLastSet = l34Pos + 1 >= l34Queue.length;
+  document.getElementById("listen34-next-btn").textContent =
+    isLastSet ? "結果を見る" : (l34Section === 3 ? "次の会話へ" : "次のトークへ");
+}
 
-  const verdict = document.getElementById("listen34-verdict");
-  verdict.textContent = correct
-    ? `正解! ⭕ +${gained}XP${l34Combo >= 2 ? ` 🔥${l34Combo}連続!` : ""}`
-    : "残念… ❌ +2XP";
-  verdict.className = `quiz-verdict ${correct ? "good" : "bad"}`;
-  document.getElementById("listen34-type").textContent = `Part ${l34Section} ・ ${set.t}`;
-
+function renderL34Script() {
+  const set = currentL34Set();
   const script = document.getElementById("listen34-script");
   script.innerHTML = "";
   set.lines.forEach((line) => {
@@ -2056,17 +2106,6 @@ function answerL34(chosen, btn) {
     p.innerHTML = `<strong>${spkLabel(line.s)}:</strong> ${escapeHtml(line.text)}<br><span>${escapeHtml(line.jtext || "")}</span>`;
     script.appendChild(p);
   });
-  const qLine = document.createElement("p");
-  qLine.className = "script-q";
-  qLine.innerHTML = `<strong>${escapeHtml(q.q)}</strong><br><span>${escapeHtml(q.jq || "")}</span><br>正解: ${escapeHtml(q.c[q.a])}`;
-  script.appendChild(qLine);
-
-  document.getElementById("listen34-explanation").textContent = q.x;
-  const isLastQ = l34QPos + 1 >= set.qs.length;
-  const isLastSet = l34Pos + 1 >= l34Queue.length;
-  document.getElementById("listen34-next-btn").textContent =
-    !isLastQ ? "次の設問へ" : (isLastSet ? "結果を見る" : (l34Section === 3 ? "次の会話へ" : "次のトークへ"));
-  document.getElementById("listen34-feedback").classList.remove("hidden");
 }
 
 function finalizeL34Set() {
@@ -2083,10 +2122,7 @@ function finalizeL34Set() {
   saveState();
 }
 
-function nextL34Question() {
-  const set = currentL34Set();
-  if (l34QPos + 1 < set.qs.length) { l34QPos++; showL34Question(); return; }
-  finalizeL34Set();
+function nextL34Set() {
   if (l34Pos + 1 < l34Queue.length) { l34Pos++; startNewL34Set(); }
   else finishL34();
 }
@@ -2120,8 +2156,10 @@ const _l34again = document.getElementById("listen34-again-btn");
 if (_l34again) _l34again.addEventListener("click", () => startListen34(l34Section));
 const _l34play = document.getElementById("listen34-play-btn");
 if (_l34play) _l34play.addEventListener("click", playL34Audio);
+const _l34check = document.getElementById("listen34-check-btn");
+if (_l34check) _l34check.addEventListener("click", gradeL34Set);
 const _l34next = document.getElementById("listen34-next-btn");
-if (_l34next) _l34next.addEventListener("click", nextL34Question);
+if (_l34next) _l34next.addEventListener("click", nextL34Set);
 
 // ---- 読解 (Part 6: 長文穴埋め / Part 7: 文書読解) ----
 // 読解タブは2セクション。どちらも「文書(セット)+ 複数設問」を1単位として扱う。
