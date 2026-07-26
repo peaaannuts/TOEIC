@@ -15,9 +15,51 @@
   --read-color: #7e57c2;
   --radius: 14px;
   --shadow: 0 1px 4px rgba(35, 52, 63, 0.10);
+  /* モーション用トークン。--ease-spring はバナーで使っていたバネ曲線= アプリのシグネチャ */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 0.18s;
+  --dur-base: 0.3s;
 }
 
 * { box-sizing: border-box; }
+
+/* ---- セッション内演出のモーション ---- */
+@keyframes pop-correct {
+  0% { transform: scale(1); }
+  55% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+@keyframes shake-wrong {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+@keyframes xp-float {
+  0% { transform: translate(-50%, 0) scale(0.9); opacity: 0; }
+  20% { transform: translate(-50%, -10px) scale(1.05); opacity: 1; }
+  100% { transform: translate(-50%, -46px) scale(1); opacity: 0; }
+}
+@keyframes combo-bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+@keyframes dot-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+/* 動きを減らす設定の端末では演出を止める(紙吹雪含む) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 html, body {
   margin: 0;
@@ -485,6 +527,13 @@ html, body {
 .choice-btn:disabled { cursor: default; opacity: 0.85; }
 .choice-btn.correct { border-color: var(--ok); background: var(--ok-light); font-weight: 700; }
 .choice-btn.wrong { border-color: var(--ng); background: var(--ng-light); }
+/* 最も頻繁に触る要素なので、押した瞬間と正誤の瞬間に必ず動きを返す */
+.choice-btn {
+  transition: transform var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast);
+}
+.choice-btn:not(:disabled):active { transform: scale(0.98); }
+.choice-btn.correct { animation: pop-correct var(--dur-base) var(--ease-spring); }
+.choice-btn.wrong { animation: shake-wrong var(--dur-base); }
 
 .quiz-feedback { margin-top: 14px; }
 .quiz-verdict { margin: 0 0 6px; font-size: 18px; font-weight: 800; }
@@ -550,6 +599,12 @@ html, body {
 .abc-btn:disabled { cursor: default; opacity: 0.85; }
 .abc-btn.correct { border-color: var(--ok); background: var(--ok-light); }
 .abc-btn.wrong { border-color: var(--ng); background: var(--ng-light); }
+.abc-btn {
+  transition: transform var(--dur-fast), border-color var(--dur-fast), background var(--dur-fast);
+}
+.abc-btn:not(:disabled):active { transform: scale(0.97); }
+.abc-btn.correct { animation: pop-correct var(--dur-base) var(--ease-spring); }
+.abc-btn.wrong { animation: shake-wrong var(--dur-base); }
 
 .listen-script { margin: 4px 0 10px; }
 .script-q {
@@ -989,3 +1044,86 @@ dialog label.check-row input {
 .l34-exp { margin: 8px 0 0; }
 .l34-exp-jq { color: var(--sub); font-size: 12px; }
 .big-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- セッション内の手応え: XPフロート ---- */
+/* 押したボタンの位置から「+10XP」が浮かび上がって消える。z-indexはバナー(100)より下 */
+.xp-float {
+  position: fixed;
+  z-index: 90;
+  pointer-events: none;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ok);
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
+  animation: xp-float 0.9s ease-out forwards;
+  white-space: nowrap;
+}
+.xp-float.bad { color: var(--sub); font-size: 15px; }
+
+/* ---- セッション内の手応え: コンボチップ ---- */
+.session-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.session-head .session-progress { margin: 0; }
+.combo-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--quiz-color);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+/* コンボが伸びるほど熱くする(音程も半音ずつ上がるので視聴覚が同じ軸で連動) */
+.combo-chip.hot { background: #f08a3c; }
+.combo-chip.blazing { background: #e8563c; box-shadow: 0 0 10px rgba(232, 86, 60, 0.5); }
+.combo-chip.bump { animation: combo-bump 0.32s var(--ease-spring); }
+
+/* ---- セッション内の緊張感: 結果ドット列(進捗バー兼ノーミス表示) ---- */
+.qdots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  transition: background var(--dur-base), box-shadow var(--dur-base);
+}
+.qdot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #dde6ea;
+  border: 1.5px solid #c8d3d8;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  line-height: 1;
+  color: #fff;
+  font-weight: 800;
+}
+.qdot.hit { background: var(--ok); border-color: var(--ok); animation: dot-pop 0.3s var(--ease-spring); }
+.qdot.miss { background: var(--ng); border-color: var(--ng); animation: dot-pop 0.3s var(--ease-spring); }
+.qdot.soft { background: var(--sub); border-color: var(--sub); animation: dot-pop 0.3s var(--ease-spring); } /* 単語「まだ」用の中間色 */
+/* ノーミス継続中はドット列全体を淡いゴールドで包み、パーフェクトボーナスが懸かっていることを示す */
+.qdots.perfect {
+  background: linear-gradient(90deg, rgba(232, 161, 61, 0.12), rgba(232, 161, 61, 0.22), rgba(232, 161, 61, 0.12));
+  box-shadow: 0 0 0 1px rgba(232, 161, 61, 0.35), 0 0 10px rgba(232, 161, 61, 0.25);
+}
+.qdots-label {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #b9862c;
+  margin: -8px 0 10px;
+  min-height: 14px;
+}

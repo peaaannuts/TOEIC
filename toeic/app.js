@@ -229,11 +229,27 @@ function seWrong() {
   playTone(ctx, 185, 0.1, 0.22, 0.08, "triangle");
 }
 
+// ノーミス継続が途切れた瞬間の音(seWrongより一段低く、ガラスが割れるような下降)
+function seBreak() {
+  const ctx = ensureAudioCtx();
+  if (!ctx) return;
+  playTone(ctx, 311, 0, 0.14, 0.09, "triangle");
+  playTone(ctx, 233, 0.08, 0.16, 0.08, "triangle");
+  playTone(ctx, 155, 0.16, 0.24, 0.07, "triangle");
+}
+
 // 単語「覚えた」: 短いポップなティック音(正解音のミニ版)
 function seTick() {
   const ctx = ensureAudioCtx();
   if (!ctx) return;
   popNote(ctx, 880, 0, 0.12, 0.14);
+}
+
+// 単語「まだ」: 罰しない柔らかい低めのポップ。自己採点モードなので seWrong の下降音は使わない
+function seSoft() {
+  const ctx = ensureAudioCtx();
+  if (!ctx) return;
+  popNote(ctx, 392, 0, 0.14, 0.09);
 }
 
 // セット完了: 上昇アルペジオ
@@ -273,6 +289,89 @@ function addXp(n) {
   if (after > before) celebrateLevelUp(after);
 }
 
+// ---- セッション内の手応え(共有ヘルパー) ----
+// 全5モード(単語/文法/Part1-2/Part3-4/Part6-7)から同じ関数を呼ぶ。
+// 各ハンドラ側は1行フックするだけで済むようにしてある。
+
+// 押したボタンの位置から「+10XP」が浮かび上がって消える
+function floatXp(anchorEl, amount, tone) {
+  if (!anchorEl || !anchorEl.getBoundingClientRect) return;
+  const r = anchorEl.getBoundingClientRect();
+  if (!r.width && !r.height) return; // 画面外/非表示の要素は無視
+  const el = document.createElement("div");
+  el.className = "xp-float" + (tone === "bad" ? " bad" : "");
+  el.textContent = `+${amount}XP`;
+  el.style.left = `${r.left + r.width / 2}px`;
+  el.style.top = `${r.top + 4}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// 連続正解を常設チップで見せる。combo>=2 で表示、0/1 で隠す。
+// seCorrect(combo) が半音ずつ音程を上げるので、色の段階を音と揃えている。
+function renderComboChip(chipId, combo) {
+  const el = document.getElementById(chipId);
+  if (!el) return;
+  if (!combo || combo < 2) { el.classList.add("hidden"); return; }
+  el.textContent = `🔥 ${combo}`;
+  el.classList.remove("hidden", "hot", "blazing");
+  if (combo >= 8) el.classList.add("blazing");
+  else if (combo >= 5) el.classList.add("hot");
+  // 再アニメーションのためクラスを付け直す
+  el.classList.remove("bump");
+  void el.offsetWidth;
+  el.classList.add("bump");
+}
+
+// 結果ドット列(進捗バーとノーミス可視化を1コンポーネントで兼ねる)。
+// trackPerfect=false のモード(単語カードの自己採点)ではパーフェクト演出を出さない。
+function initQDots(containerId, total, trackPerfect) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+  const track = trackPerfect !== false;
+  box.innerHTML = "";
+  box.classList.toggle("perfect", track);
+  box.dataset.trackPerfect = track ? "1" : "0";
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement("span");
+    d.className = "qdot upcoming";
+    box.appendChild(d);
+  }
+  renderQDotsLabel(containerId);
+}
+
+// result: "hit"(正解) / "miss"(誤答) / "soft"(単語「まだ」、ノーミス判定の対象外)
+function markQDot(containerId, index, result) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+  const dot = box.children[index];
+  if (dot) {
+    dot.classList.remove("upcoming");
+    dot.classList.add(result);
+  }
+  if (result === "miss" && box.dataset.trackPerfect === "1" && box.classList.contains("perfect")) {
+    box.classList.remove("perfect");
+    seBreak();
+  }
+  renderQDotsLabel(containerId);
+}
+
+// ノーミス継続中は「+30XPボーナス継続中」ラベルをドット列の下に出す。
+// ラベル要素はHTMLに置かず、ここで初回だけ動的に挿入する(5画面分の記述を増やさないため)。
+function renderQDotsLabel(containerId) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+  let label = document.getElementById(containerId + "-label");
+  if (!label) {
+    label = document.createElement("p");
+    label.className = "qdots-label";
+    label.id = containerId + "-label";
+    box.insertAdjacentElement("afterend", label);
+  }
+  if (box.dataset.trackPerfect !== "1" || box.children.length === 0) { label.textContent = ""; return; }
+  label.textContent = box.classList.contains("perfect") ? "✨ ノーミス継続中 +30XPボーナス" : "";
+}
+
 // 紙吹雪
 function confetti() {
   const box = document.createElement("div");
@@ -306,10 +405,29 @@ function showBanner(text) {
   }, 2400);
 }
 
+// ---- 演出の渋滞を整理(祝賀を結果画面へ集約) ----
+// セッション中はデイリー/週間クエスト/実績/ストリーク節目等のバナー・紙吹雪・音を
+// 即座に鳴らさず溜めておき、finish*()でまとめて(少しずつずらして)再生する。
+// XP・ジェム・バッジ付与などのstate変更は各呼び出し元で即時のまま行う(演出だけを遅延)。
+let sessionActive = false;
+let pendingCelebrations = [];
+
+function queueCelebration(fn) {
+  if (sessionActive) pendingCelebrations.push(fn);
+  else fn(); // セッション外(ホームタブ・回帰テスト等)では従来どおり即時実行
+}
+
+function flushCelebrations() {
+  const items = pendingCelebrations.splice(0);
+  items.forEach((fn, i) => setTimeout(fn, 300 + i * 650));
+}
+
 function celebrateLevelUp(level) {
-  seLevelUp();
-  confetti();
-  showBanner(`⬆️ レベル${level} にアップ!`);
+  queueCelebration(() => {
+    seLevelUp();
+    confetti();
+    showBanner(`⬆️ レベル${level} にアップ!`);
+  });
 }
 
 function goalsMetToday() {
@@ -326,8 +444,10 @@ function maybeCelebrateGoal() {
   if (!goalsMetToday() || state.goalDone === todayKey()) return;
   state.goalDone = todayKey();
   saveState();
-  confetti();
-  showBanner("🎉 今日のノルマ全達成!");
+  queueCelebration(() => {
+    confetti();
+    showBanner("🎉 今日のノルマ全達成!");
+  });
 }
 
 // ---- 称号(レベルに応じて進化) ----
@@ -390,8 +510,10 @@ function checkBadges() {
     if (b.cond(a)) {
       state.badges.push(b.id);
       addXp(BADGE_XP);
-      confetti();
-      showBanner(`🎖️ 実績解除「${b.name}」! +${BADGE_XP}XP`);
+      queueCelebration(() => {
+        confetti();
+        showBanner(`🎖️ 実績解除「${b.name}」! +${BADGE_XP}XP`);
+      });
       saveState();
     }
   });
@@ -445,7 +567,7 @@ function checkDailyChallenges() {
       daily.claimed.push(c.id);
       state.dailyDoneCount = (state.dailyDoneCount || 0) + 1;
       addXp(c.xp);
-      showBanner(`🏅 チャレンジ達成! +${c.xp}XP`);
+      queueCelebration(() => showBanner(`🏅 チャレンジ達成! +${c.xp}XP`));
       openChest(c.xp); // 達成報酬は宝箱でジェムを獲得(変動報酬)
       addMonthlyPoints(1); // 月間バッジ用のポイント
       changed = true;
@@ -513,8 +635,10 @@ function checkWeeklyQuests() {
       addXp(q.xp);
       addGems(q.gems);
       addMonthlyPoints(1);
-      confetti();
-      showBanner(`🗓️ 週間クエスト達成! +${q.xp}XP +${q.gems}💎`);
+      queueCelebration(() => {
+        confetti();
+        showBanner(`🗓️ 週間クエスト達成! +${q.xp}XP +${q.gems}💎`);
+      });
       changed = true;
     }
   });
@@ -548,9 +672,11 @@ function checkMonthlyBadge() {
   const badge = monthlyBadgeFor(m.ym);
   state.monthlyBadges.push(badge);
   addGems(MONTHLY_BADGE_GEMS);
-  confetti();
-  seLevelUp();
-  showBanner(`🏆 ${badge.name} バッジ獲得! +${MONTHLY_BADGE_GEMS}💎`);
+  queueCelebration(() => {
+    confetti();
+    seLevelUp();
+    showBanner(`🏆 ${badge.name} バッジ獲得! +${MONTHLY_BADGE_GEMS}💎`);
+  });
   saveState();
 }
 
@@ -652,7 +778,7 @@ function touchStreak() {
         for (let i = 1; i <= missed; i++) state.freezeLog.push(addDays(s.lastActive, i));
         if (state.freezeLog.length > 30) state.freezeLog = state.freezeLog.slice(-30);
         s.count += 1;
-        showBanner(`❄️ お守りで連続記録を守りました(${missed}日分)`);
+        queueCelebration(() => showBanner(`❄️ お守りで連続記録を守りました(${missed}日分)`));
       } else {
         s.count = 1; // 守りきれず途切れた
       }
@@ -677,9 +803,11 @@ function checkStreakMilestones() {
       state.freezes = Math.min(FREEZE_MAX, state.freezes + 1);
       extra = " ・ ❄️お守り+1";
     }
-    confetti();
-    seLevelUp();
-    showBanner(`🔥 ${m.days}日連続達成! +${m.gems}💎${extra}`);
+    queueCelebration(() => {
+      confetti();
+      seLevelUp();
+      showBanner(`🔥 ${m.days}日連続達成! +${m.gems}💎${extra}`);
+    });
   });
 }
 
@@ -703,7 +831,7 @@ function openChest(challengeXp) {
     bonusXp = 15;
     addXp(bonusXp); // 金の宝箱の“当たり”
   }
-  showBanner(`${icon} 宝箱! +${gems}💎${bonusXp ? ` +${bonusXp}XP` : ""}`);
+  queueCelebration(() => showBanner(`${icon} 宝箱! +${gems}💎${bonusXp ? ` +${bonusXp}XP` : ""}`));
 }
 
 // ショップ: フリーズを購入
@@ -1152,6 +1280,7 @@ function startWordSession() {
     alert("今日学習する単語はありません。明日また復習しましょう!");
     return;
   }
+  sessionActive = true;
   // iOS Safari向け: タップ直下で音声を有効化(リスニングと同じ対策)
   if (speechOk) {
     audioStarted = true;
@@ -1160,6 +1289,7 @@ function startWordSession() {
   wordPos = 0;
   sessionOk = 0;
   sessionXp = 0;
+  initQDots("words-qdots", wordQueue.length, false); // 自己採点モードなのでノーミス演出は出さない
   document.getElementById("words-start").classList.add("hidden");
   document.getElementById("words-result").classList.add("hidden");
   document.getElementById("words-session").classList.remove("hidden");
@@ -1193,7 +1323,7 @@ function flipCard() {
   document.getElementById("fc-actions").classList.remove("hidden");
 }
 
-function answerCard(remembered) {
+function answerCard(remembered, btn) {
   const i = wordQueue[wordPos];
   const st = state.words[i] || { lv: 0, next: todayKey(), seen: 0, ok: 0 };
   st.seen++;
@@ -1203,9 +1333,13 @@ function answerCard(remembered) {
     sessionOk++;
     st.lv = Math.min(MAX_LEVEL, st.lv + 1);
   } else {
+    seSoft(); // 「まだ」を罰しない柔らかい音(自己採点モードなので下降音のseWrongは使わない)
     st.lv = 0;
   }
-  addXp(remembered ? 5 : 2); // 「まだ」でも取り組んだ分のXPが入る
+  const gained = remembered ? 5 : 2; // 「まだ」でも取り組んだ分のXPが入る
+  addXp(gained);
+  if (btn) floatXp(btn, gained, remembered ? "good" : "bad");
+  markQDot("words-qdots", wordPos, remembered ? "hit" : "soft");
   checkDailyChallenges();
   st.next = addDays(todayKey(), INTERVALS[st.lv]);
   state.words[i] = st;
@@ -1231,13 +1365,15 @@ function finishWordSession() {
     `${wordQueue.length}枚学習しました。<br>「覚えた」: <strong>${sessionOk}</strong> 枚 / 「まだ」: <strong>${wordQueue.length - sessionOk}</strong> 枚` +
     `<br>獲得XP: <strong>+${sessionXp}</strong> ✨`;
   maybeCelebrateGoal();
+  sessionActive = false;
+  flushCelebrations();
 }
 
 document.getElementById("words-start-btn").addEventListener("click", startWordSession);
 document.getElementById("words-again-btn").addEventListener("click", startWordSession);
 document.getElementById("flashcard").addEventListener("click", flipCard);
-document.getElementById("fc-ok-btn").addEventListener("click", () => answerCard(true));
-document.getElementById("fc-ng-btn").addEventListener("click", () => answerCard(false));
+document.getElementById("fc-ok-btn").addEventListener("click", (e) => answerCard(true, e.currentTarget));
+document.getElementById("fc-ng-btn").addEventListener("click", (e) => answerCard(false, e.currentTarget));
 
 // 🔊ボタン(カードのタップ=めくり操作に伝播させない)
 document.getElementById("fc-speak").addEventListener("click", (e) => {
@@ -1354,12 +1490,15 @@ function renderQuizStart() {
 }
 
 function startQuiz(timed) {
+  sessionActive = true;
   quizTimed = timed === true;
   quizQueue = buildQuizQueue();
   quizPos = 0;
   quizCorrect = 0;
   quizCombo = 0;
   sessionXp = 0;
+  renderComboChip("quiz-combo-chip", 0);
+  initQDots("quiz-qdots", quizQueue.length, true);
   document.getElementById("ta-timer").classList.toggle("hidden", !quizTimed);
   document.getElementById("quiz-start").classList.add("hidden");
   document.getElementById("quiz-result").classList.add("hidden");
@@ -1412,12 +1551,15 @@ function answerQuestion(chosen, btn, timedOut) {
   const speedBonus = quizTimed && correct && taRemaining >= TA_SECONDS / 2 ? 5 : 0;
   const gained = (correct ? (quizCombo >= 3 ? 15 : 10) : 2) + speedBonus;
   addXp(gained);
+  renderComboChip("quiz-combo-chip", quizCombo);
 
   document.querySelectorAll(".choice-btn").forEach((b) => {
     b.disabled = true;
     if (Number(b.dataset.orig) === q.a) b.classList.add("correct");
   });
   if (!correct && btn) btn.classList.add("wrong");
+  floatXp(btn || document.querySelector(".choice-btn.correct"), gained, correct ? "good" : "bad");
+  markQDot("quiz-qdots", quizPos, correct ? "hit" : "miss");
 
   // 単語と同じ間隔反復: 正解でレベルUP(間隔が延びる)、不正解でレベル0に戻す
   const st = state.quizStats[qi] || { lv: 0, next: todayKey(), seen: 0, ok: 0 };
@@ -1493,6 +1635,8 @@ function finishQuiz() {
     `<br>獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
   if (pct === 100) confetti();
   maybeCelebrateGoal();
+  sessionActive = false;
+  flushCelebrations();
 }
 
 document.getElementById("quiz-start-btn").addEventListener("click", () => startQuiz(false));
@@ -1686,6 +1830,7 @@ function renderListenStart() {
 }
 
 function startListen(mode) {
+  sessionActive = true;
   listenMode = mode;
   // iOS Safariはユーザー操作の直下でしか初回再生を許可しないため、
   // ボタンタップと同期的に空の発話を流して音声を有効化しておく
@@ -1698,6 +1843,8 @@ function startListen(mode) {
   listenCorrect = 0;
   listenCombo = 0;
   sessionXp = 0;
+  renderComboChip("listen-combo-chip", 0);
+  initQDots("listen-qdots", listenQueue.length, true);
   document.getElementById("listen-start").classList.add("hidden");
   document.getElementById("listen-result").classList.add("hidden");
   document.getElementById("listen-session").classList.remove("hidden");
@@ -1759,12 +1906,15 @@ function answerListen(chosen, btn) {
   }
   const gained = correct ? (listenCombo >= 3 ? 15 : 10) : 2;
   addXp(gained);
+  renderComboChip("listen-combo-chip", listenCombo);
 
   document.querySelectorAll(".abc-btn").forEach((b) => {
     b.disabled = true;
     if (Number(b.dataset.orig) === 0) b.classList.add("correct");
   });
   if (!correct) btn.classList.add("wrong");
+  floatXp(btn, gained, correct ? "good" : "bad");
+  markQDot("listen-qdots", listenPos, correct ? "hit" : "miss");
 
   // 間隔反復: 正解でレベルUP(間隔が延びる)、不正解でレベル0に戻す
   const stats = listenStatsStore();
@@ -1850,6 +2000,8 @@ function finishListen() {
     `<br>獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
   if (pct === 100) confetti();
   maybeCelebrateGoal();
+  sessionActive = false;
+  flushCelebrations();
 }
 
 document.getElementById("part1-start-btn").addEventListener("click", () => startListen(1));
@@ -1869,6 +2021,7 @@ let l34Section = 3;     // 3 = Part 3(会話), 4 = Part 4(トーク)
 let l34Queue = [], l34Pos = 0;
 let l34Correct = 0, l34Total = 0, l34Combo = 0, l34SetCorrect = 0, l34SetOk = true;
 let l34Selections = [], l34Orders = [], l34Graded = false;
+let l34DotOffset = 0; // 結果ドット列は全設問通しの通し番号。現在のセットより前の設問数の合計
 
 function l34Sets() { return l34Section === 3 ? PART3 : PART4; }
 function l34Stats() { return l34Section === 3 ? state.part3Stats : state.part4Stats; }
@@ -1952,7 +2105,11 @@ function startListen34(section) {
   if (speechOk) { audioStarted = true; speechSynthesis.speak(new SpeechSynthesisUtterance("")); }
   l34Queue = buildL34Queue();
   if (l34Queue.length === 0) return;
+  sessionActive = true;
   l34Pos = 0; l34Correct = 0; l34Total = 0; l34Combo = 0; sessionXp = 0;
+  renderComboChip("listen34-combo-chip", 0);
+  const totalQ34 = l34Queue.reduce((a, idx) => a + l34Sets()[idx].qs.length, 0);
+  initQDots("listen34-qdots", totalQ34, true);
   document.getElementById("listen-start").classList.add("hidden");
   document.getElementById("listen34-result").classList.add("hidden");
   document.getElementById("listen34-session").classList.remove("hidden");
@@ -1988,6 +2145,7 @@ function renderL34Graphic() {
 function startNewL34Set() {
   const set = currentL34Set();
   l34SetOk = true; l34SetCorrect = 0; l34Graded = false;
+  l34DotOffset = l34Queue.slice(0, l34Pos).reduce((a, idx) => a + l34Sets()[idx].qs.length, 0);
   l34Selections = new Array(set.qs.length).fill(-1);
   l34Orders = set.qs.map((q) => shuffleArray(q.c.map((_, i) => i)));
   document.getElementById("listen34-progress").textContent =
@@ -2061,7 +2219,8 @@ function gradeL34Set() {
     const chosen = l34Selections[qi];
     const correct = chosen === q.a;
     if (correct) { l34Combo++; setCorrect++; } else { l34Combo = 0; anyWrong = true; }
-    addXp(correct ? (l34Combo >= 3 ? 15 : 10) : 2);
+    const gained = correct ? (l34Combo >= 3 ? 15 : 10) : 2;
+    addXp(gained);
     const block = blocks[qi];
     block.querySelectorAll(".choice-btn").forEach((b) => {
       b.disabled = true;
@@ -2070,6 +2229,13 @@ function gradeL34Set() {
       if (o === q.a) b.classList.add("correct");
       else if (o === chosen) b.classList.add("wrong");
     });
+    // 一括採点なので、各設問の判定を少しずらして表示しリズムを作る
+    // (従来Part3/4はXPが全く見えなかったので、ここが一番の改善点)
+    const anchorBtn = block.querySelector(`.choice-btn[data-orig="${chosen}"]`) || block.querySelector(".choice-btn.correct");
+    setTimeout(() => {
+      floatXp(anchorBtn, gained, correct ? "good" : "bad");
+      markQDot("listen34-qdots", l34DotOffset + qi, correct ? "hit" : "miss");
+    }, qi * 130);
     const exp = block.querySelector(".l34-exp");
     exp.innerHTML = `<strong>${correct ? "⭕ 正解" : "❌ 不正解"}</strong> ／ ${escapeHtml(q.x)}` +
       (q.jq ? `<br><span class="l34-exp-jq">${escapeHtml(q.jq)}</span>` : "");
@@ -2082,6 +2248,7 @@ function gradeL34Set() {
   });
   l34SetCorrect = setCorrect;
   l34SetOk = !anyWrong;
+  setTimeout(() => renderComboChip("listen34-combo-chip", l34Combo), (set.qs.length - 1) * 130);
   if (setCorrect === set.qs.length) seCorrect(3);
   else if (setCorrect > 0) seCorrect(1);
   else seWrong();
@@ -2146,6 +2313,8 @@ function finishL34() {
     `<br>獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
   if (pct === 100) confetti();
   maybeCelebrateGoal();
+  sessionActive = false;
+  flushCelebrations();
 }
 
 const _p3btn = document.getElementById("part3-start-btn");
@@ -2244,6 +2413,7 @@ function startRead(section) {
   readSection = section;
   readQueue = buildReadQueue();
   if (readQueue.length === 0) return;
+  sessionActive = true;
   readPos = 0;
   readQPos = 0;
   readCorrect = 0;
@@ -2251,6 +2421,9 @@ function startRead(section) {
   readCombo = 0;
   readSetOk = true;
   sessionXp = 0;
+  renderComboChip("read-combo-chip", 0);
+  const totalReadQ = readQueue.reduce((a, idx) => a + readSets()[idx].qs.length, 0);
+  initQDots("read-qdots", totalReadQ, true);
   document.getElementById("read-start").classList.add("hidden");
   document.getElementById("read-result").classList.add("hidden");
   document.getElementById("read-session").classList.remove("hidden");
@@ -2368,12 +2541,15 @@ function answerRead(chosen, btn) {
   else { readCombo = 0; readSetOk = false; seWrong(); }
   const gained = correct ? (readCombo >= 3 ? 15 : 10) : 2;
   addXp(gained);
+  renderComboChip("read-combo-chip", readCombo);
 
   document.querySelectorAll("#read-choices .choice-btn").forEach((b) => {
     b.disabled = true;
     if (Number(b.dataset.orig) === q.a) b.classList.add("correct");
   });
   if (!correct) btn.classList.add("wrong");
+  floatXp(btn, gained, correct ? "good" : "bad");
+  markQDot("read-qdots", readTotal, correct ? "hit" : "miss");
 
   readTotal++;
   const log = todayLog();
@@ -2486,6 +2662,8 @@ function finishRead() {
     `獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
   if (pct === 100) confetti();
   maybeCelebrateGoal();
+  sessionActive = false;
+  flushCelebrations();
 }
 
 document.getElementById("part6-start-btn").addEventListener("click", () => startRead(6));

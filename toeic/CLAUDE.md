@@ -201,6 +201,47 @@ Duolingoのリサーチを踏まえ、「明日も開かせる」外殻を強化
 - 検証: `scratchpad/l34check.js`(Playwright)で会話再生→6問解答→結果、推定スコアへの反映、
   コンソールエラー無しを実機確認。既存のsmoke.js(11)/testB.js(12)も回帰PASS。
 
+## セッション内演出層(手応え・緊張感・演出整理)(2026-07-19追加)
+
+外側のゲーミフィケーション(ストリーク/ジェム/宝箱/週間クエスト等)は「明日も開かせる」ための層だが、
+**解いている最中の手応えが薄い**という課題があった(選択肢ボタンが無反応、XPが見えない、コンボが
+問題間で消える、進捗がテキストのみ、パーフェクトボーナスが懸かっていることが見えない、正解1問で
+バナーが4〜5枚渋滞する等)。ユーザーが選んだ方向は「①手応えを厚く ②途中で途切れない緊張感を保つ
+③演出の渋滞を整理する」の3点(意外性・ランダム性/即リトライは見送り)。**5モード(単語/文法/Part1-2/
+Part3-4/Part6-7)で共通ヘルパー化**し、各ハンドラは1〜数行のフック呼び出しで済むようにしてある。
+
+- **Phase 1: 手応え(juice)**: `:root` に `--ease-spring`(バネ曲線、バナーと同じ)/ `--dur-fast` /
+  `--dur-base` を追加。`@keyframes` を5つ新設(`pop-correct`/`shake-wrong`/`xp-float`/`combo-bump`/
+  `dot-pop`。以前はアプリ全体で `confetti-fall` の1つしかなかった)。`prefers-reduced-motion` ガードを
+  アプリ全体に新設(以前は皆無)。`.choice-btn`/`.abc-btn` に `transition`+`:active` 縮小+正誤アニメを追加。
+  共有ヘルパー `floatXp(anchorEl, amount, tone)`(押したボタン位置から `+NXP` が浮いて消える)と
+  `renderComboChip(chipId, combo)`(常設コンボ表示、コンボが伸びるほど色が濃くなる)を新設し、
+  `answerQuestion`/`answerListen`/`answerRead`/`answerCard`/`gradeL34Set` の全5箇所に配線。
+  単語カードの「まだ」には新規 `seSoft()`(`seWrong()`の否定的な下降音ではなく、罰しない柔らかい音)を追加。
+  Part 3/4は元々XP表示が皆無だったので、ここが一番の改善になっている。
+- **Phase 2: 緊張感(結果ドット列)**: セッションヘッダに設問数分の `.qdots`(`● ● ○ ○ ...`)を追加。
+  進捗バーの不在と「ノーミスが懸かっている」ことの不可視性を同時に解決する。共有ヘルパー
+  `initQDots(containerId, total, trackPerfect)` / `markQDot(containerId, index, "hit"|"miss"|"soft")`。
+  ノーミス継続中は `.qdots.perfect` でゴールドのグロー+「✨ノーミス継続中 +30XPボーナス」ラベルを表示
+  (既存のパーフェクトボーナスを「懸かっているもの」として初めて可視化)。初ミスでグローが割れて消え、
+  新規 `seBreak()`(`seWrong()`とは別の、一段低い「途切れた」音)が鳴る。単語モードは自己採点のため
+  `trackPerfect=false` で「まだ」を `.soft`(中間色、ノーミス判定対象外)として扱い、正直な自己申告を
+  罰しない。Part 3/4は `gradeL34Set()` のバッチ採点内で複数ドットを120msずつずらして順に確定させる。
+- **Phase 3: 演出の渋滞を整理**: `sessionActive`(各`start*()`でtrue、各`finish*()`の冒頭でfalse)と
+  `queueCelebration(fn)`/`flushCelebrations()` を新設。`sessionActive` が true の間は `showBanner()`/
+  `confetti()`/`seLevelUp()` の呼び出しを `pendingCelebrations` に積むだけにして**セッション中は演出を
+  出さない**(state変更=XP/ジェム/バッジ付与は従来通り即時)。`finish*()` で `flushCelebrations()` を呼び、
+  溜まった演出を `300 + i*650` msずつずらして順番に再生する。ラップ対象は `celebrateLevelUp`/`checkBadges`/
+  `checkDailyChallenges`のデイリー達成/`openChest`/`checkWeeklyQuests`/`checkMonthlyBadge`/
+  `checkStreakMilestones`/`touchStreak`のお守り消費/`maybeCelebrateGoal` の9箇所。`sessionActive` が
+  false のとき(ホームタブ等セッション外、および `smoke.js`/`testB.js` が `touchStreak()` 等を直接呼ぶ
+  回帰テスト)は従来通り即時発火にフォールバックするため、**既存の挙動・既存テストは無変更**。
+- 検証: `scratchpad/phase1check.js`/`phase1flow.js`(手応え)、`scratchpad/phase2check.js`/`phase2perfect.js`
+  (ドット列)、`scratchpad/phase3check.js`(セッション中の演出抑制/`finish*`後の順次再生/セッション外の
+  即時フォールバックの11ケース、全PASS)、`scratchpad/fullflow.js`(5モード通しでコンソールエラー0件を確認)。
+  既存の `smoke.js`(11件)/`testB.js`(12件)も無変更で全PASSを再確認済み。
+- `sw.js` の `CACHE_NAME` は `v37` にインクリメント済み。
+
 ## 音声(TTS)
 
 `speechSynthesis`(ブラウザ内蔵、無料・オフライン)を使用。音声ファイルは一切使っていない。
@@ -213,7 +254,7 @@ Duolingoのリサーチを踏まえ、「明日も開かせる」外殻を強化
 ## プレビュー検証で踏んだ地雷(次回も起きうる)
 
 - **Service Workerキャッシュ**: `data.js`/`app.js` を編集したら `sw.js` の `CACHE_NAME` を必ずインクリメント
-  (現在 `toeic600-v36`。2026-07-18: `MASTERED_LEVEL` を 3→4 に変更。「習得」を最上位lv4=14日間隔到達に統一し、
+  (現在 `toeic600-v37`。2026-07-18: `MASTERED_LEVEL` を 3→4 に変更。「習得」を最上位lv4=14日間隔到達に統一し、
   ホームの「習得した単語」カウンター・実績(単語コレクター50/単語マスター150)の基準を記録タブの
   「習得済み(間隔14日)」と一致させた。実績がゆるすぎた問題の修正。獲得済みバッジは剥奪されない)。プレビューで検証する際は `navigator.serviceWorker.getRegistrations()` から
   `update()` を呼んで反映を待つ必要がある(でないと古いコードのまま)。

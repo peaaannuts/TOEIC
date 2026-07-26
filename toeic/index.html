@@ -150,7 +150,10 @@
 
     <!-- 学習画面 -->
     <div id="words-session" class="hidden">
-      <p class="session-progress" id="words-progress"></p>
+      <div class="session-head">
+        <p class="session-progress" id="words-progress"></p>
+      </div>
+      <div class="qdots" id="words-qdots"></div>
       <div class="flashcard" id="flashcard">
         <div class="flashcard-front" id="flashcard-front">
           <p class="fc-word" id="fc-word"></p>
@@ -208,7 +211,11 @@
 
     <!-- 出題画面 -->
     <div id="quiz-session" class="hidden">
-      <p class="session-progress" id="quiz-progress"></p>
+      <div class="session-head">
+        <p class="session-progress" id="quiz-progress"></p>
+        <span class="combo-chip hidden" id="quiz-combo-chip"></span>
+      </div>
+      <div class="qdots" id="quiz-qdots"></div>
       <div class="ta-timer hidden" id="ta-timer"><div class="ta-timer-fill" id="ta-timer-fill"></div></div>
       <div class="card quiz-card">
         <p class="quiz-type" id="quiz-type"></p>
@@ -289,7 +296,11 @@
 
     <!-- 出題画面 -->
     <div id="listen-session" class="hidden">
-      <p class="session-progress" id="listen-progress"></p>
+      <div class="session-head">
+        <p class="session-progress" id="listen-progress"></p>
+        <span class="combo-chip hidden" id="listen-combo-chip"></span>
+      </div>
+      <div class="qdots" id="listen-qdots"></div>
       <div class="card">
         <div class="listen-photo hidden" id="listen-photo"></div>
         <button class="replay-btn" id="listen-play-btn">🔊 もう一度聞く</button>
@@ -317,7 +328,11 @@
 
     <!-- Part 3/4 出題画面(会話・トーク) -->
     <div id="listen34-session" class="hidden">
-      <p class="session-progress" id="listen34-progress"></p>
+      <div class="session-head">
+        <p class="session-progress" id="listen34-progress"></p>
+        <span class="combo-chip hidden" id="listen34-combo-chip"></span>
+      </div>
+      <div class="qdots" id="listen34-qdots"></div>
       <div class="card">
         <button class="replay-btn" id="listen34-play-btn">🔊 もう一度聞く</button>
         <p class="l34-listening" id="listen34-listening">🎧 音声は1回。すべての設問に答えてから「答え合わせ」を押しましょう</p>
@@ -377,8 +392,10 @@
     <div id="read-session" class="hidden">
       <div class="read-topbar">
         <p class="session-progress" id="read-progress"></p>
+        <span class="combo-chip hidden" id="read-combo-chip"></span>
         <p class="read-timer" id="read-timer">⏱️ 0:00</p>
       </div>
+      <div class="qdots" id="read-qdots"></div>
       <div class="card read-passages" id="read-passages"></div>
       <div class="card quiz-card">
         <p class="quiz-type" id="read-qtype"></p>
