@@ -13,7 +13,7 @@
   --quiz-color: #e8a13d;
   --listen-color: #2e9e6b;
   --read-color: #7e57c2;
-  --radius: 14px;
+  --radius: 18px;
 
   /* 段階のある影。「本物っぽさ」は ambient(広く薄い)+ direct(狭く濃い)の2枚重ねで出る。
      --shadow は既存の参照を壊さないよう --shadow-sm のエイリアスとして残す */
@@ -39,6 +39,17 @@
   --r-sm: 8px; --r-md: 10px; --r-lg: 14px; --r-pill: 999px;
   --fs-xs: 11px; --fs-sm: 12px; --fs-base: 13px; --fs-md: 15px; --fs-lg: 17px;
   --fs-xl: 22px; --fs-display: 34px; --fs-hero: 46px;
+
+  /* 数字専用フォント。外部フォントは使わず(オフライン専用PWAのため)、
+     各OS標準の幾何学的なUIフォントで数字だけ質感を変える */
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', sans-serif;
+
+  /* ホームのヒーローカード用の紺グラデーション */
+  --hero-navy-1: #0f3a52; --hero-navy-2: #1d5978; --hero-navy-3: #2b6e8f;
+  /* 不足していたセクション別の淡色(--words-light/--listen-light は既存の
+     --accent-light / --ok-light をそのまま流用する) */
+  --quiz-light: #fdf1de;
+  --read-light: #f3eefb;
 
   /* モーション用トークン。--ease-spring はバナーで使っていたバネ曲線= アプリのシグネチャ */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -83,6 +94,11 @@
 @keyframes page-in {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+/* ゴーストリーグカードを横切る光の帯 */
+@keyframes shine {
+  from { background-position: -200px 0; }
+  to { background-position: 460px 0; }
 }
 
 /* 動きを減らす設定の端末では演出を止める(紙吹雪含む) */
@@ -172,12 +188,14 @@ html, body {
   transition: color var(--dur-fast);
 }
 .tab-btn.active { color: var(--accent); font-weight: 700; }
-.tab-icon { font-size: 20px; transition: transform var(--dur-fast) var(--ease-out); }
+.tab-icon { display: flex; transition: transform var(--dur-fast) var(--ease-out); }
+.tab-icon svg { display: block; }
 .tab-btn.active .tab-icon { transform: translateY(-1px) scale(1.08); }
 
 /* ---- 共通パーツ ---- */
 .card {
   background: var(--card);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
   padding: 16px;
@@ -222,65 +240,60 @@ html, body {
 }
 .hint-small { text-align: left; margin: 0 0 8px; font-size: 12px; }
 
-/* ---- ホーム ---- */
-.countdown-card { text-align: center; }
-.countdown-label { margin: 0; color: var(--sub); font-size: 13px; }
-.countdown-days { margin: 2px 0; }
-#countdown-num { font-size: 52px; font-weight: 800; color: var(--accent); }
-.countdown-unit { font-size: 18px; margin-left: 4px; }
-.countdown-date { margin: 0; color: var(--sub); font-size: 13px; }
-
-.score-card { text-align: center; }
-.score-label { margin: 0; font-size: 14px; font-weight: 700; color: var(--text); }
-.score-sublabel { font-size: 11px; font-weight: 400; color: var(--sub); }
-.score-total { margin: 4px 0 8px; }
-#score-total-num { font-size: 46px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
-.score-max { font-size: 16px; color: var(--sub); }
-.score-breakdown { display: flex; gap: 10px; }
-.score-seg {
-  flex: 1;
-  background: var(--accent-light);
-  border-radius: 10px;
-  padding: 8px 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.score-seg-label { font-size: 11px; color: var(--sub); }
-.score-seg-num { font-size: 22px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
-.score-diagnosis { margin: 10px 0 4px; font-size: 13px; font-weight: 700; color: var(--ok); }
-.score-note { margin: 0; font-size: 11px; color: var(--sub); line-height: 1.5; }
-
-.goal-row {
+/* ---- ホーム: 推定スコア(リング) ---- */
+.score-hero-card { display: flex; align-items: center; gap: 16px; }
+.score-hero-body { flex: 1; min-width: 0; }
+.score-hero-label { font-size: 12px; font-weight: 700; color: var(--sub); }
+.score-hero-bars { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.score-hero-bar-head { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 3px; color: var(--sub); }
+.score-hero-bar-head b { font-family: var(--font-display); color: var(--text); }
+.score-hero-bar { height: 5px; background: var(--line-soft); border-radius: 3px; overflow: hidden; }
+.score-hero-bar-fill { height: 100%; border-radius: 3px; width: 0; transition: width 0.6s var(--ease-out); }
+.score-hero-bar-fill.listen { background: var(--words-color); }
+.score-hero-bar-fill.read { background: var(--read-color); }
+.score-diag-chip {
+  margin-top: 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 6px;
+  background: var(--gold-soft);
+  color: var(--gold-deep);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 700;
 }
-.goal-name { width: 64px; font-size: 13px; flex-shrink: 0; }
-.goal-bar {
-  flex: 1;
-  height: 12px;
-  background: var(--accent-light);
-  border-radius: 6px;
-  overflow: hidden;
+.score-note { display: block; margin: -6px 0 12px; padding: 0 4px; font-size: 11px; color: var(--sub); line-height: 1.5; text-align: center; }
+
+/* ---- ホーム: 4モードのミニカード(今日のノルマ) ---- */
+.mode-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 4px; }
+.mode-mini {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 12px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--dur-fast), transform var(--dur-fast);
 }
-.goal-bar-fill {
-  height: 100%;
-  width: 0;
-  background: var(--accent);
-  border-radius: 6px;
-  transition: width 0.4s;
-}
-#goal-bar-quiz { background: var(--quiz-color); }
-#goal-bar-listen { background: var(--listen-color); }
-#goal-bar-read { background: var(--read-color); }
-.goal-count { width: 58px; text-align: right; font-size: 13px; color: var(--sub); flex-shrink: 0; }
-.goal-message { margin: 6px 0 0; font-size: 13px; text-align: center; color: var(--ok); font-weight: 700; }
+.mode-mini:active { transform: scale(0.96); }
+.mode-mini-num { font: 800 20px var(--font-display); color: var(--words-color); }
+.mode-mini.quiz .mode-mini-num { color: var(--quiz-color); }
+.mode-mini.listen .mode-mini-num { color: var(--listen-color); }
+.mode-mini.read .mode-mini-num { color: var(--read-color); }
+.mode-mini-max { font-size: 11px; color: var(--sub); font-weight: 700; }
+.mode-mini-label { font-size: 10.5px; font-weight: 700; color: var(--sub); margin-top: 2px; }
+.mode-mini-bar { height: 4px; background: var(--line-soft); border-radius: 2px; overflow: hidden; margin-top: 7px; }
+.mode-mini-bar-fill { height: 100%; width: 0; transition: width 0.4s; }
+.mode-mini.words .mode-mini-bar-fill { background: var(--words-color); }
+.mode-mini.quiz .mode-mini-bar-fill { background: var(--quiz-color); }
+.mode-mini.listen .mode-mini-bar-fill { background: var(--listen-color); }
+.mode-mini.read .mode-mini-bar-fill { background: var(--read-color); }
+.goal-message { margin: 10px 0 14px; font-size: 13px; text-align: center; color: var(--ok); font-weight: 700; }
 
 .stat-grid { display: flex; gap: 12px; }
 .stat-card { flex: 1; text-align: center; }
-.stat-num { margin: 0; font-size: 32px; font-weight: 800; color: var(--accent); }
+.stat-num { margin: 0; font-size: 32px; font-weight: 800; color: var(--accent); font-family: var(--font-display); }
 .stat-label { margin: 2px 0 0; font-size: 12px; color: var(--sub); }
 
 /* ---- レベル・XP ---- */
@@ -313,7 +326,7 @@ html, body {
   border-radius: 6px;
   transition: width 0.5s;
 }
-.level-xp { font-size: 12px; color: var(--sub); flex-shrink: 0; margin-left: auto; }
+.level-xp { font-size: 12px; color: var(--sub); flex-shrink: 0; margin-left: auto; font-family: var(--font-display); }
 .level-title { font-size: 13px; font-weight: 700; color: var(--accent); }
 .level-row + .level-row { margin-top: 8px; }
 
@@ -425,6 +438,7 @@ html, body {
 
 .flashcard {
   background: var(--card);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
   min-height: 240px;
@@ -475,7 +489,7 @@ html, body {
   cursor: pointer;
 }
 .fc-btn.ok { background: var(--ok); color: #fff; box-shadow: 0 2px 6px rgba(46, 158, 107, 0.28); }
-.fc-btn.ng { background: var(--ng-light); color: var(--ng); box-shadow: var(--shadow-sm); }
+.fc-btn.ng { background: var(--ng-light); color: var(--ng); border: 1.5px solid #f2d3cf; box-shadow: none; }
 .fc-btn { transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast); }
 .fc-btn:active { transform: translateY(1px) scale(0.97); }
 
@@ -577,6 +591,9 @@ html, body {
 .quiz-question { margin: 0 0 14px; font-size: 16px; line-height: 1.8; }
 .quiz-choices { display: flex; flex-direction: column; gap: 8px; }
 .choice-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 12px 14px;
   border: 2px solid #dde6ea;
   border-radius: 10px;
@@ -585,6 +602,20 @@ html, body {
   text-align: left;
   cursor: pointer;
 }
+.choice-tag {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--line-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 11px var(--font-display);
+  color: var(--sub);
+}
+.choice-btn.correct .choice-tag { background: var(--ok); color: #fff; }
+.choice-btn.wrong .choice-tag { background: var(--ng); color: #fff; }
 .choice-btn:disabled { cursor: default; opacity: 0.85; }
 .choice-btn.correct { border-color: var(--ok); background: var(--ok-light); font-weight: 700; }
 .choice-btn.wrong { border-color: var(--ng); background: var(--ng-light); }
@@ -896,60 +927,67 @@ dialog label.check-row input {
 }
 .backup-paste .secondary-btn { width: 100%; flex: none; }
 
-/* ---- ストリーク・ヒーロー(ホーム最上部) ---- */
-.streak-hero {
-  background: linear-gradient(135deg, #ff9d3d 0%, #ff7a3d 55%, #f4603c 100%);
+/* ---- ヒーローカード(ホーム最上部) ---- */
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--hero-navy-1) 0%, var(--hero-navy-2) 55%, var(--hero-navy-3) 100%);
   color: #fff;
   cursor: pointer;
   user-select: none;
-  text-align: center;
-  padding: 18px 16px 14px;
+  padding: 20px 20px 26px;
+  border-radius: 0 0 28px 28px;
+  margin: 0 -16px 14px;
+  transition: transform var(--dur-fast);
 }
-.streak-hero.active { box-shadow: 0 3px 16px rgba(244, 96, 60, 0.38); }
-.streak-hero:active { transform: scale(0.99); }
-.streak-flame-wrap {
+.hero-card:active { transform: scale(0.99); }
+/* 「今日すでに学習した」の合図は炎バッジ自体の明暗(.dim切り替え)で表現する。
+   ヘッダーに直付けした全幅カードに外側グローを足すと継ぎ目にはみ出すため、カード側には付けない */
+.hero-blob { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.06); pointer-events: none; }
+.hero-blob-1 { top: -70px; right: -60px; width: 200px; height: 200px; }
+.hero-blob-2 { bottom: -50px; left: -50px; width: 160px; height: 160px; background: rgba(255, 255, 255, 0.05); }
+.hero-top { display: flex; align-items: center; justify-content: space-between; position: relative; }
+.hero-date { font-size: 11.5px; font-weight: 700; opacity: 0.8; }
+.hero-exam-pill { background: rgba(255, 255, 255, 0.14); border-radius: 999px; padding: 4px 12px; font-size: 11.5px; font-weight: 700; }
+.hero-exam-pill b { font: 800 14px var(--font-display); }
+.hero-streak-row { display: flex; align-items: center; gap: 16px; margin-top: 18px; position: relative; }
+.hero-flame-badge {
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, #ff9d3d, #f4603c);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-}
-.streak-flame {
-  font-size: 46px;
-  line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  box-shadow: 0 8px 20px rgba(244, 96, 60, 0.4);
   transition: filter 0.3s;
 }
-.streak-flame.dim { filter: grayscale(1) opacity(0.55); }
-.streak-count-wrap { display: flex; align-items: baseline; gap: 4px; }
-.streak-count { font-size: 44px; font-weight: 800; letter-spacing: 1px; }
-.streak-days { font-size: 15px; font-weight: 700; opacity: 0.95; }
-.streak-message {
-  margin: 8px 0 12px;
-  font-size: 13px;
-  line-height: 1.5;
-  opacity: 0.97;
-}
-.streak-wallet {
+.hero-flame-badge.dim { filter: grayscale(1) opacity(0.5); }
+.hero-streak-num { display: flex; align-items: baseline; gap: 6px; }
+.hero-streak-num span:first-child { font: 800 40px/1 var(--font-display); }
+.hero-streak-unit { font-size: 14px; font-weight: 700; opacity: 0.9; }
+.hero-streak-msg { margin: 4px 0 0; font-size: 12px; opacity: 0.85; line-height: 1.5; }
+.hero-wallet-row { display: flex; align-items: center; gap: 8px; margin-top: 16px; position: relative; flex-wrap: wrap; }
+.hero-pill {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.wallet-item {
-  background: rgba(255, 255, 255, 0.22);
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.14);
   border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 14px;
-  font-weight: 700;
+  padding: 6px 13px;
+  font: 700 13px var(--font-display);
+  color: #fff;
 }
-.wallet-shop {
+.hero-shop-btn {
+  margin-left: auto;
   background: #fff;
   color: #f4603c;
   border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 13px;
+  padding: 6px 14px;
+  font-size: 12px;
   font-weight: 800;
+  cursor: pointer;
 }
 
 /* ---- ショップ ---- */
@@ -975,49 +1013,64 @@ dialog label.check-row input {
   cursor: not-allowed;
 }
 
-/* ---- 今週カード(ゴーストリーグ + 週間クエスト + 月間ミニ) ---- */
-.league-box { margin-bottom: 12px; }
-.league-heading { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--text); }
+/* ---- ゴーストリーグカード(紺色・シャイン演出) ---- */
+.league-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--hero-navy-1);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  color: #fff;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-md);
+}
+.league-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.08) 45%, transparent 60%);
+  background-size: 600px 100%;
+  animation: shine 3.5s linear infinite;
+}
+.league-card-head { display: flex; justify-content: space-between; align-items: center; position: relative; }
+.league-card-eyebrow { font-size: 12px; font-weight: 700; opacity: 0.75; }
+.league-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .league-bar {
   position: relative;
-  height: 14px;
-  background: var(--accent-light);
-  border-radius: 7px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 5px;
+  margin-top: 12px;
   overflow: visible;
 }
 .league-bar-fill {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, #6ea9c9, #4a90c2);
-  border-radius: 7px;
+  background: linear-gradient(90deg, #4a90c2, #7fc3e8);
+  border-radius: 5px;
   transition: width 0.5s;
 }
 .league-bar-fill.ahead { background: linear-gradient(90deg, #35b37e, #2e9e6b); }
 .league-ghost-mark {
   position: absolute;
-  top: -3px;
-  width: 0;
-  height: 20px;
-  border-left: 2px dashed var(--sub);
-  transform: translateX(-1px);
+  top: -4px;
+  width: 2px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 1px;
 }
-.league-ghost-mark::after {
-  content: "👤";
-  position: absolute;
-  top: -16px;
-  left: -8px;
-  font-size: 12px;
-}
-.league-text { margin: 8px 0 0; font-size: 12px; color: var(--sub); line-height: 1.5; }
+.league-text { margin: 9px 0 0; font-size: 11px; opacity: 0.8; line-height: 1.5; position: relative; }
 
-.weekly-sub {
-  margin: 6px 0 2px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-  border-top: 1px solid #eef2f4;
-  padding-top: 10px;
-}
+.weekly-sub { margin: 0 0 8px; font-size: 14px; font-weight: 800; color: var(--text); }
 
 .monthly-mini { margin-top: 12px; }
 .monthly-mini-head {
@@ -1247,8 +1300,7 @@ dialog label.check-row input {
   box-shadow: var(--shadow-sm);
 }
 .score-ring-pct {
-  font-size: var(--fs-display);
-  font-weight: 800;
+  font: 800 var(--fs-display) var(--font-display);
   line-height: 1;
   color: var(--ring-c);
   font-variant-numeric: tabular-nums;
@@ -1257,6 +1309,7 @@ dialog label.check-row input {
   font-size: var(--fs-sm);
   color: var(--sub);
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-display);
 }
 
 /* 絵文字はリングの右下に重ねるバッジに */
@@ -1309,6 +1362,7 @@ dialog label.check-row input {
   color: var(--accent);
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-display);
 }
 .result-tile-label { font-size: var(--fs-xs); color: var(--sub); }
 /* 獲得XPのタイルだけ金色で目立たせる */

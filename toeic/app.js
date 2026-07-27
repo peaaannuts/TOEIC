@@ -9,6 +9,35 @@ const MASTERED_LEVEL = 4; // このレベル(最上位=14日間隔まで到達)�
                           // 記録タブの「習得済み(間隔14日)」と定義を統一(lv3=7日間隔は「定着中」扱い)
 const QUIZ_SET_SIZE = 10;
 
+// ---- 共有アイコン(線画SVG。絵文字だとサイズ・太さが端末ごとにバラつくため統一する) ----
+// d: 内側のパス。fill:true の場合は塗り(炎・ジェム)、それ以外は currentColor のストローク線画
+const ICONS = {
+  home: { d: '<path d="M3 10.5L12 3l9 7.5M5 9.5V21h14V9.5"/>' },
+  words: { d: '<path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zm0 0a2 2 0 0 0 2 2h13"/>' },
+  quiz: { d: '<path d="M17 3l4 4L8 20l-5 1 1-5zM14 6l4 4"/>' },
+  listen: { d: '<path d="M4 13a8 8 0 0 1 16 0M4 13v4a2 2 0 0 0 2 2h1v-6H6a2 2 0 0 0-2 2zm16 0v4a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"/>' },
+  read: { d: '<path d="M12 5.5C10 3.8 7.3 3.5 4 4v15c3.3-.5 6-.2 8 1.5 2-1.7 4.7-2 8-1.5V4c-3.3-.5-6-.2-8 1.5zm0 0V20"/>' },
+  stats: { d: '<path d="M5 20V12M12 20V6M19 20v-9"/>', linejoin: false },
+  flame: { d: '<path d="M12 2c1.5 3-1 4.5-1 7 0 1.6 1.3 3 3 3 2.4 0 3-2.4 2.4-4 2.2 1.6 3.6 4 3.6 6.5A8 8 0 0 1 4 14.5C4 9 9.5 6.5 12 2z"/>', fill: true },
+  freeze: { d: '<path d="M12 2v20M4 7l16 10M20 7L4 17"/>' },
+  gem: { d: '<path d="M12 3l6 5-6 13L6 8z"/>', fill: true },
+  speaker: { d: '<path d="M11 5L6 9H3v6h3l5 4V5zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>' },
+  target: { d: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>' },
+  trophy: { d: '<path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0zM7 5H4a3 3 0 0 0 3 5M17 5h3a3 3 0 0 1-3 5"/>' },
+  check: { d: '<path d="M4 12l6 6L20 6"/>', sw: 3 },
+};
+
+function svgIcon(name, size, extraAttrs) {
+  const spec = ICONS[name];
+  if (!spec) return "";
+  size = size || 20;
+  extraAttrs = extraAttrs || "";
+  const strokeAttrs = spec.fill
+    ? `fill="currentColor"`
+    : `fill="none" stroke="currentColor" stroke-width="${spec.sw || 2}" stroke-linecap="round"${spec.linejoin === false ? "" : ' stroke-linejoin="round"'}`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" ${strokeAttrs} ${extraAttrs}>${spec.d}</svg>`;
+}
+
 // ---- ストリーク & 通貨(継続の仕組み) ----
 const FREEZE_MAX = 2;           // ❄️フリーズの最大ストック数
 const FREEZE_COST = 200;        // ショップでのフリーズ購入価格(💎)
@@ -943,8 +972,7 @@ function renderStreakHero() {
   const count = calcStreak();
   const flame = document.getElementById("streak-flame");
   const hero = document.getElementById("streak-hero");
-  flame.textContent = "🔥"; // 未達成時は .dim でグレーアウト(下のCSS)
-  flame.classList.toggle("dim", !active);
+  flame.classList.toggle("dim", !active); // 未達成時はCSSでグレーアウト
   hero.classList.toggle("active", active);
   document.getElementById("streak-count").textContent = count;
   document.getElementById("gem-count").textContent = state.gems || 0;
@@ -1119,6 +1147,8 @@ function renderScore() {
   const lEl = document.getElementById("score-listen");
   const rEl = document.getElementById("score-read");
   const diag = document.getElementById("score-diagnosis");
+  const ring = document.getElementById("home-score-ring");
+  const SECTION_MAX = 495; // sectionScoreFromAcc() のクランプ上限(Listening/Readingそれぞれ)
 
   const MIN_SEEN = 10; // これ未満のセクションは推定を控える
   const listenReady = est.listenSeen >= MIN_SEEN;
@@ -1126,29 +1156,48 @@ function renderScore() {
 
   lEl.textContent = listenReady ? est.listen : "--";
   rEl.textContent = readReady ? est.read : "--";
+  document.getElementById("score-listen-bar").style.width = `${listenReady ? (est.listen / SECTION_MAX) * 100 : 0}%`;
+  document.getElementById("score-read-bar").style.width = `${readReady ? (est.read / SECTION_MAX) * 100 : 0}%`;
 
+  let total = null;
   if (!listenReady && !readReady) {
     totalEl.textContent = "--";
     diag.textContent = "各セクションを少し解くと推定スコアが表示されます。";
-    return;
-  }
-  if (!listenReady || !readReady) {
+  } else if (!listenReady || !readReady) {
     totalEl.textContent = "--";
     diag.textContent = listenReady
       ? "単語・文法・読解をもう少し解くとリーディングも推定できます。"
       : "リスニングをもう少し解くと推定できます。";
-    return;
+  } else {
+    total = est.listen + est.read;
+    totalEl.textContent = total;
+    const target = state.settings.targetScore || 600;
+    const parts = [];
+    parts.push(total < target ? `目標${target}まであと ${target - total} 点` : `目標${target}を突破!🎉`);
+    parts.push(est.listen <= est.read ? "次はリスニング重点がおすすめ" : "次はリーディング重点がおすすめ");
+    const conf = Math.min(est.listenSeen, est.readSeen);
+    diag.textContent = parts.join(" ／ ") + (conf < 20 ? "(まだデータ少なめ・参考値)" : "");
   }
 
-  const total = est.listen + est.read;
-  totalEl.textContent = total;
-  const target = state.settings.targetScore || 600;
-  const parts = [];
-  parts.push(total < target ? `目標${target}まであと ${target - total} 点` : `目標${target}を突破!🎉`);
-  parts.push(est.listen <= est.read ? "次はリスニング重点がおすすめ" : "次はリーディング重点がおすすめ");
-  const conf = Math.min(est.listenSeen, est.readSeen);
-  diag.textContent = parts.join(" ／ ") + (conf < 20 ? "(まだデータ少なめ・参考値)" : "");
+  // ホームのスコアリング(結果画面と同じ conic-gradient リングを、990点満点の割合で描く)
+  const pct = total !== null ? Math.min(100, (total / 990) * 100) : 0;
+  animateValue(700, pct, (v) => ring.style.setProperty("--pct", v.toFixed(1)));
 }
+
+// 今日のノルマのうち最初に未達成のもの(単語→文法→リスニング→読解の順)を返す。全達成なら null
+function weakestGoal(log, goals) {
+  const order = ["words", "quiz", "listen", "read"];
+  for (const k of order) {
+    if ((log[k] || 0) < goals[k]) return k;
+  }
+  return null;
+}
+const HOME_CTA_LABEL = {
+  words: "単語学習をはじめる",
+  quiz: "文法クイズを解いてノルマ達成 →",
+  listen: "リスニングをしてノルマ達成 →",
+  read: "読解を解いてノルマ達成 →",
+};
 
 function renderHome() {
   renderScore();
@@ -1169,10 +1218,10 @@ function renderHome() {
   document.getElementById("goal-bar-quiz").style.width = `${Math.min(100, (log.quiz / gq) * 100)}%`;
   document.getElementById("goal-bar-listen").style.width = `${Math.min(100, (listen / gl) * 100)}%`;
   document.getElementById("goal-bar-read").style.width = `${Math.min(100, (read / gr) * 100)}%`;
-  document.getElementById("goal-count-words").textContent = `${log.words} / ${gw}枚`;
-  document.getElementById("goal-count-quiz").textContent = `${log.quiz} / ${gq}問`;
-  document.getElementById("goal-count-listen").textContent = `${listen} / ${gl}問`;
-  document.getElementById("goal-count-read").textContent = `${read} / ${gr}問`;
+  document.getElementById("goal-count-words").innerHTML = `${log.words}<span class="mode-mini-max">/${gw}</span>`;
+  document.getElementById("goal-count-quiz").innerHTML = `${log.quiz}<span class="mode-mini-max">/${gq}</span>`;
+  document.getElementById("goal-count-listen").innerHTML = `${listen}<span class="mode-mini-max">/${gl}</span>`;
+  document.getElementById("goal-count-read").innerHTML = `${read}<span class="mode-mini-max">/${gr}</span>`;
 
   const msg = document.getElementById("goal-message");
   if (log.words >= gw && log.quiz >= gq && listen >= gl && read >= gr) {
@@ -1182,6 +1231,14 @@ function renderHome() {
   } else {
     msg.textContent = "";
   }
+
+  const ctaBtn = document.getElementById("home-cta-btn");
+  const weak = weakestGoal(
+    { words: log.words, quiz: log.quiz, listen, read },
+    { words: gw, quiz: gq, listen: gl, read: gr }
+  ) || "words";
+  ctaBtn.textContent = HOME_CTA_LABEL[weak];
+  ctaBtn.dataset.goto = weak;
 
   renderStreakHero();
   renderLeague();
@@ -1618,12 +1675,15 @@ function showQuestion() {
   }
   const box = document.getElementById("quiz-choices");
   box.innerHTML = "";
-  const labels = ["(A)", "(B)", "(C)", "(D)"];
+  const labels = ["A", "B", "C", "D"];
   order.forEach((orig, pos) => {
     const btn = document.createElement("button");
     btn.className = "choice-btn";
     btn.dataset.orig = orig;
-    btn.textContent = `${labels[pos]} ${q.c[orig]}`;
+    const tag = document.createElement("span");
+    tag.className = "choice-tag";
+    tag.textContent = labels[pos];
+    btn.append(tag, document.createTextNode(q.c[orig]));
     btn.addEventListener("click", () => answerQuestion(orig, btn));
     box.appendChild(btn);
   });
@@ -2272,7 +2332,7 @@ function renderL34Questions() {
   const set = currentL34Set();
   const box = document.getElementById("listen34-questions");
   box.innerHTML = "";
-  const labels = ["(A)", "(B)", "(C)", "(D)"];
+  const labels = ["A", "B", "C", "D"];
   set.qs.forEach((q, qi) => {
     const block = document.createElement("div");
     block.className = "l34-qblock";
@@ -2286,7 +2346,10 @@ function renderL34Questions() {
       const btn = document.createElement("button");
       btn.className = "choice-btn";
       btn.dataset.orig = orig;
-      btn.textContent = `${labels[pos]} ${q.c[orig]}`;
+      const tag = document.createElement("span");
+      tag.className = "choice-tag";
+      tag.textContent = labels[pos];
+      btn.append(tag, document.createTextNode(q.c[orig]));
       btn.addEventListener("click", () => selectL34(qi, orig, btn));
       ch.appendChild(btn);
     });
@@ -2630,12 +2693,15 @@ function showReadQuestion() {
   }
   const box = document.getElementById("read-choices");
   box.innerHTML = "";
-  const labels = ["(A)", "(B)", "(C)", "(D)"];
+  const labels = ["A", "B", "C", "D"];
   readOrder.forEach((orig, pos) => {
     const btn = document.createElement("button");
     btn.className = "choice-btn";
     btn.dataset.orig = orig;
-    btn.textContent = `${labels[pos]} ${q.c[orig]}`;
+    const tag = document.createElement("span");
+    tag.className = "choice-tag";
+    tag.textContent = labels[pos];
+    btn.append(tag, document.createTextNode(q.c[orig]));
     btn.addEventListener("click", () => answerRead(orig, btn));
     box.appendChild(btn);
   });
