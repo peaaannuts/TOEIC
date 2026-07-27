@@ -372,6 +372,87 @@ function renderQDotsLabel(containerId) {
   label.textContent = box.classList.contains("perfect") ? "✨ ノーミス継続中 +30XPボーナス" : "";
 }
 
+// ---- 結果画面(5モード共通のビルダー) ----
+// 結果画面の markup は5モードとも同一なので、描画をここ1箇所に集約する。
+// 各 finish*() は数値と文言を渡すだけでよい。
+
+function reduceMotion() {
+  return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+// 正答率からティア(絵文字・見出し・リングの色)を決める。
+// 同じ判定が4つの finish*() に散っていたのをここへ集約した。
+function resultTier(pct, lowTitle, lowEmoji) {
+  if (pct === 100) return { emoji: "👑", title: "パーフェクト!!", color: "var(--gold)" };
+  if (pct >= 80) return { emoji: "🏆", title: "すばらしい!", color: "var(--ok)" };
+  if (pct >= 60) return { emoji: "🎉", title: "その調子!", color: "var(--accent)" };
+  return { emoji: lowEmoji || "📖", title: lowTitle, color: "var(--sub)" };
+}
+
+// 0 → to へ数値を動かす。CSSのreduced-motionガードはrAFを止められないのでJS側で分岐する。
+function animateValue(ms, to, onStep) {
+  if (reduceMotion()) { onStep(to); return; }
+  const start = performance.now();
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / ms);
+    onStep(to * (1 - Math.pow(1 - t, 3))); // ease-out
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// o = { pct, correct, total, xp, perfect, emoji, title, color, note, tiles:[{label,value,cls}] }
+function renderResult(mode, o) {
+  const el = (suffix) => document.getElementById(`${mode}-result-${suffix}`);
+  const ring = el("ring");
+
+  ring.style.setProperty("--ring-c", o.color);
+  el("frac").textContent = `${o.correct} / ${o.total}`;
+  el("emoji").textContent = o.emoji;
+  el("title").textContent = o.title;
+  el("text").innerHTML = o.note || "";
+  el("card").classList.toggle("perfect", !!o.perfect);
+
+  // リングの角度と中央の%を同じカーブで動かす
+  const pctEl = el("pct");
+  animateValue(700, o.pct, (v) => {
+    ring.style.setProperty("--pct", v.toFixed(1));
+    pctEl.textContent = `${Math.round(v)}%`;
+  });
+
+  // 1問ごとの振り返り。セッション中の .qdots がそのまま記録なので読み直すだけでよい
+  const recap = el("recap");
+  recap.innerHTML = "";
+  document.querySelectorAll(`#${mode}-qdots .qdot`).forEach((d) => {
+    const s = document.createElement("span");
+    const state = ["hit", "miss", "soft"].find((k) => d.classList.contains(k)) || "upcoming";
+    s.className = `qdot ${state}`;
+    recap.appendChild(s);
+  });
+
+  // 数字のタイル(今まで文章に埋もれていた値を拾い上げる)
+  const stats = el("stats");
+  stats.innerHTML = "";
+  (o.tiles || []).forEach((t) => {
+    const tile = document.createElement("div");
+    tile.className = "result-tile" + (t.cls ? ` ${t.cls}` : "");
+    const v = document.createElement("span");
+    v.className = "result-tile-value";
+    v.textContent = t.value;
+    const l = document.createElement("span");
+    l.className = "result-tile-label";
+    l.textContent = t.label;
+    tile.append(v, l);
+    stats.appendChild(tile);
+  });
+
+  // 獲得XPのタイルだけカウントアップさせる
+  const xpEl = stats.querySelector(".result-tile.xp .result-tile-value");
+  if (xpEl && typeof o.xp === "number") {
+    animateValue(700, o.xp, (v) => { xpEl.textContent = `+${Math.round(v)}`; });
+  }
+}
+
 // 紙吹雪
 function confetti() {
   const box = document.createElement("div");
@@ -1361,9 +1442,24 @@ function finishWordSession() {
   checkDailyChallenges();
   document.getElementById("words-session").classList.add("hidden");
   document.getElementById("words-result").classList.remove("hidden");
-  document.getElementById("words-result-text").innerHTML =
-    `${wordQueue.length}枚学習しました。<br>「覚えた」: <strong>${sessionOk}</strong> 枚 / 「まだ」: <strong>${wordQueue.length - sessionOk}</strong> 枚` +
-    `<br>獲得XP: <strong>+${sessionXp}</strong> ✨`;
+  // 単語は自己採点モードなので、ティア判定もパーフェクト演出も付けない。
+  // 「覚えた」割合は成績ではなく中立的な進捗として見せる(正直に「まだ」を押して損をしないように)
+  renderResult("words", {
+    pct: Math.round((sessionOk / wordQueue.length) * 100),
+    correct: sessionOk,
+    total: wordQueue.length,
+    xp: sessionXp,
+    perfect: false,
+    emoji: "🎉",
+    title: "おつかれさま!",
+    color: "var(--accent)",
+    note: "「まだ」を選んだ単語は、近いうちにまた出題されます。",
+    tiles: [
+      { label: "獲得XP", value: `+${sessionXp}`, cls: "xp" },
+      { label: "覚えた", value: `${sessionOk}/${wordQueue.length}` },
+      { label: "まだ", value: `${wordQueue.length - sessionOk}` },
+    ],
+  });
   maybeCelebrateGoal();
   sessionActive = false;
   flushCelebrations();
@@ -1626,13 +1722,17 @@ function finishQuiz() {
   checkDailyChallenges();
   document.getElementById("quiz-session").classList.add("hidden");
   document.getElementById("quiz-result").classList.remove("hidden");
-  const emoji = pct === 100 ? "👑" : pct >= 80 ? "🏆" : pct >= 60 ? "🎉" : "📖";
-  const title = pct === 100 ? "パーフェクト!!" : pct >= 80 ? "すばらしい!" : pct >= 60 ? "その調子!" : "解説を復習しよう";
-  document.getElementById("quiz-result-emoji").textContent = emoji;
-  document.getElementById("quiz-result-title").textContent = title;
-  document.getElementById("quiz-result-text").innerHTML =
-    `${quizQueue.length}問中 <strong>${quizCorrect}</strong> 問正解(${pct}%)<br>間違えた問題は次のセットにも出やすくなります。` +
-    `<br>獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
+  const tier = resultTier(pct, "解説を復習しよう");
+  renderResult("quiz", {
+    pct, correct: quizCorrect, total: quizQueue.length, xp: sessionXp,
+    perfect: pct === 100, emoji: tier.emoji, title: tier.title, color: tier.color,
+    note: "間違えた問題は次のセットにも出やすくなります。" +
+      (pct === 100 ? "<br>パーフェクトボーナス +30XP 込み ✨" : ""),
+    tiles: [
+      { label: "獲得XP", value: `+${sessionXp}`, cls: "xp" },
+      { label: "正解", value: `${quizCorrect}/${quizQueue.length}` },
+    ],
+  });
   if (pct === 100) confetti();
   maybeCelebrateGoal();
   sessionActive = false;
@@ -1991,13 +2091,17 @@ function finishListen() {
   checkDailyChallenges();
   document.getElementById("listen-session").classList.add("hidden");
   document.getElementById("listen-result").classList.remove("hidden");
-  const emoji = pct === 100 ? "👑" : pct >= 80 ? "🏆" : pct >= 60 ? "🎉" : "🎧";
-  const title = pct === 100 ? "パーフェクト!!" : pct >= 80 ? "すばらしい!" : pct >= 60 ? "その調子!" : "スクリプトを復習しよう";
-  document.getElementById("listen-result-emoji").textContent = emoji;
-  document.getElementById("listen-result-title").textContent = title;
-  document.getElementById("listen-result-text").innerHTML =
-    `${listenQueue.length}問中 <strong>${listenCorrect}</strong> 問正解(${pct}%)<br>間違えた問題は次のセットにも出やすくなります。` +
-    `<br>獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
+  const tier = resultTier(pct, "スクリプトを復習しよう", "🎧");
+  renderResult("listen", {
+    pct, correct: listenCorrect, total: listenQueue.length, xp: sessionXp,
+    perfect: pct === 100, emoji: tier.emoji, title: tier.title, color: tier.color,
+    note: "間違えた問題は次のセットにも出やすくなります。" +
+      (pct === 100 ? "<br>パーフェクトボーナス +30XP 込み ✨" : ""),
+    tiles: [
+      { label: "獲得XP", value: `+${sessionXp}`, cls: "xp" },
+      { label: "正解", value: `${listenCorrect}/${listenQueue.length}` },
+    ],
+  });
   if (pct === 100) confetti();
   maybeCelebrateGoal();
   sessionActive = false;
@@ -2304,13 +2408,17 @@ function finishL34() {
   checkDailyChallenges();
   document.getElementById("listen34-session").classList.add("hidden");
   document.getElementById("listen34-result").classList.remove("hidden");
-  const emoji = pct === 100 ? "👑" : pct >= 80 ? "🏆" : pct >= 60 ? "🎉" : "🎧";
-  const title = pct === 100 ? "パーフェクト!!" : pct >= 80 ? "すばらしい!" : pct >= 60 ? "その調子!" : "スクリプトを復習しよう";
-  document.getElementById("listen34-result-emoji").textContent = emoji;
-  document.getElementById("listen34-result-title").textContent = title;
-  document.getElementById("listen34-result-text").innerHTML =
-    `${l34Total}問中 <strong>${l34Correct}</strong> 問正解(${pct}%)<br>間違えた${l34Section === 3 ? "会話" : "トーク"}は次のセットにも出やすくなります。` +
-    `<br>獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
+  const tier = resultTier(pct, "スクリプトを復習しよう", "🎧");
+  renderResult("listen34", {
+    pct, correct: l34Correct, total: l34Total, xp: sessionXp,
+    perfect: pct === 100, emoji: tier.emoji, title: tier.title, color: tier.color,
+    note: `間違えた${l34Section === 3 ? "会話" : "トーク"}は次のセットにも出やすくなります。` +
+      (pct === 100 ? "<br>パーフェクトボーナス +30XP 込み ✨" : ""),
+    tiles: [
+      { label: "獲得XP", value: `+${sessionXp}`, cls: "xp" },
+      { label: "正解", value: `${l34Correct}/${l34Total}` },
+    ],
+  });
   if (pct === 100) confetti();
   maybeCelebrateGoal();
   sessionActive = false;
@@ -2648,18 +2756,20 @@ function finishRead() {
   const ss = String(sec % 60).padStart(2, "0");
   document.getElementById("read-session").classList.add("hidden");
   document.getElementById("read-result").classList.remove("hidden");
-  const emoji = pct === 100 ? "👑" : pct >= 80 ? "🏆" : pct >= 60 ? "🎉" : "📖";
-  const title = pct === 100 ? "パーフェクト!!" : pct >= 80 ? "すばらしい!" : pct >= 60 ? "その調子!" : "解説を読み返そう";
-  document.getElementById("read-result-emoji").textContent = emoji;
-  document.getElementById("read-result-title").textContent = title;
+  const tier = resultTier(pct, "解説を読み返そう");
   const paceNote = readSection === 6
     ? "本番Part 6は約16問。文脈から空所を素早く埋める練習です。"
     : "本番Part 7は約54問を約55分で解きます(目安 約1問/分)。";
-  document.getElementById("read-result-text").innerHTML =
-    `${readTotal}問中 <strong>${readCorrect}</strong> 問正解(${pct}%)<br>` +
-    `所要時間: <strong>${mm}:${ss}</strong> ／ ペース: <strong>${pace}</strong> 問/分<br>` +
-    `${paceNote}<br>` +
-    `獲得XP: <strong>+${sessionXp}</strong> ✨${pct === 100 ? "(パーフェクトボーナス +30 込み)" : ""}`;
+  renderResult("read", {
+    pct, correct: readCorrect, total: readTotal, xp: sessionXp,
+    perfect: pct === 100, emoji: tier.emoji, title: tier.title, color: tier.color,
+    note: paceNote + (pct === 100 ? "<br>パーフェクトボーナス +30XP 込み ✨" : ""),
+    tiles: [
+      { label: "獲得XP", value: `+${sessionXp}`, cls: "xp" },
+      { label: "正解", value: `${readCorrect}/${readTotal}` },
+      { label: `${pace} 問/分`, value: `${mm}:${ss}` },
+    ],
+  });
   if (pct === 100) confetti();
   maybeCelebrateGoal();
   sessionActive = false;

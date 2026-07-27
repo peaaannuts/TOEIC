@@ -14,11 +14,38 @@
   --listen-color: #2e9e6b;
   --read-color: #7e57c2;
   --radius: 14px;
-  --shadow: 0 1px 4px rgba(35, 52, 63, 0.10);
+
+  /* 段階のある影。「本物っぽさ」は ambient(広く薄い)+ direct(狭く濃い)の2枚重ねで出る。
+     --shadow は既存の参照を壊さないよう --shadow-sm のエイリアスとして残す */
+  --shadow-sm: 0 1px 2px rgba(35, 52, 63, 0.05), 0 1px 3px rgba(35, 52, 63, 0.09);
+  --shadow-md: 0 2px 4px rgba(35, 52, 63, 0.05), 0 4px 12px rgba(35, 52, 63, 0.10);
+  --shadow-lg: 0 4px 8px rgba(35, 52, 63, 0.06), 0 12px 28px rgba(35, 52, 63, 0.14);
+  --shadow: var(--shadow-sm);
+  --shadow-accent: 0 2px 6px rgba(43, 110, 143, 0.28), 0 1px 2px rgba(35, 52, 63, 0.10);
+  --shadow-inset: inset 0 1px 2px rgba(35, 52, 63, 0.10);
+  /* バーのフィルに乗せる光沢(上が明るく下に向かって消える) */
+  --sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+
+  /* 線の色。従来は約10種の灰色がハードコードされていた */
+  --line: #dde6ea;
+  --line-soft: #eef3f5;
+
+  /* 金系(パーフェクト・XP・バッジで使う) */
+  --gold: #e8a13d;
+  --gold-deep: #b57917;
+  --gold-soft: #fdf3e3;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+  --r-sm: 8px; --r-md: 10px; --r-lg: 14px; --r-pill: 999px;
+  --fs-xs: 11px; --fs-sm: 12px; --fs-base: 13px; --fs-md: 15px; --fs-lg: 17px;
+  --fs-xl: 22px; --fs-display: 34px; --fs-hero: 46px;
+
   /* モーション用トークン。--ease-spring はバナーで使っていたバネ曲線= アプリのシグネチャ */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --dur-fast: 0.18s;
   --dur-base: 0.3s;
+  --dur-slow: 0.6s;
 }
 
 * { box-sizing: border-box; }
@@ -51,6 +78,12 @@
   60% { transform: scale(1.25); }
   100% { transform: scale(1); }
 }
+/* タブ切り替え・結果画面など、display:none から現れる面のフェードイン。
+   showTab() は .hidden を付け外しするだけなので、display が none→block になるたびに再生される */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* 動きを減らす設定の端末では演出を止める(紙吹雪含む) */
 @media (prefers-reduced-motion: reduce) {
@@ -71,6 +104,19 @@ html, body {
 }
 
 .hidden { display: none !important; }
+
+/* キーボード操作時だけ出るフォーカスリング(従来アプリ全体に focus 系の指定が無かった) */
+:focus-visible {
+  outline: 3px solid rgba(43, 110, 143, 0.45);
+  outline-offset: 2px;
+}
+
+/* タブ本体と、セッション/結果のような画面単位の切り替えにフェードを付ける */
+.tab-page:not(.hidden),
+#words-result:not(.hidden), #quiz-result:not(.hidden), #listen-result:not(.hidden),
+#listen34-result:not(.hidden), #read-result:not(.hidden) {
+  animation: page-in 0.28s var(--ease-out);
+}
 
 /* ---- ヘッダー & タブバー ---- */
 .app-header {
@@ -107,7 +153,8 @@ html, body {
   z-index: 10;
   display: flex;
   background: var(--card);
-  border-top: 1px solid #dde6ea;
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -2px 12px rgba(35, 52, 63, 0.06);
   padding-bottom: env(safe-area-inset-bottom);
 }
 .tab-btn {
@@ -122,15 +169,17 @@ html, body {
   font-size: 11px;
   color: var(--sub);
   cursor: pointer;
+  transition: color var(--dur-fast);
 }
 .tab-btn.active { color: var(--accent); font-weight: 700; }
-.tab-icon { font-size: 20px; }
+.tab-icon { font-size: 20px; transition: transform var(--dur-fast) var(--ease-out); }
+.tab-btn.active .tab-icon { transform: translateY(-1px) scale(1.08); }
 
 /* ---- 共通パーツ ---- */
 .card {
   background: var(--card);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-md);
   padding: 16px;
   margin-bottom: 14px;
 }
@@ -143,17 +192,27 @@ html, body {
   margin-top: 10px;
   border: none;
   border-radius: var(--radius);
-  background: var(--accent);
+  background: linear-gradient(180deg, #3480a3, var(--accent));
   color: #fff;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--shadow-accent);
+  transition: transform var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast), filter var(--dur-fast);
 }
 .big-btn.secondary {
   background: var(--accent-light);
   color: var(--accent);
+  box-shadow: var(--shadow-sm);
 }
-.big-btn:active { transform: scale(0.98); }
+/* 押し込みは「沈む」動き。transitionが無いと従来はカクッと飛んでいた */
+.big-btn:active {
+  transform: translateY(1px) scale(0.985);
+  box-shadow: 0 1px 3px rgba(43, 110, 143, 0.30);
+  filter: brightness(0.97);
+}
+.big-btn:disabled { box-shadow: none; }
 
 .hint, .hint-small {
   color: var(--sub);
@@ -367,7 +426,7 @@ html, body {
 .flashcard {
   background: var(--card);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-md);
   min-height: 240px;
   display: flex;
   align-items: center;
@@ -403,6 +462,7 @@ html, body {
 }
 .word-speak-btn.example { font-size: 13px; font-weight: 700; }
 .word-speak-btn:active { transform: scale(0.94); }
+.word-speak-btn { transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast); }
 
 .fc-actions { display: flex; gap: 12px; margin-top: 14px; }
 .fc-btn {
@@ -414,9 +474,10 @@ html, body {
   font-weight: 700;
   cursor: pointer;
 }
-.fc-btn.ok { background: var(--ok); color: #fff; }
-.fc-btn.ng { background: var(--ng-light); color: var(--ng); }
-.fc-btn:active { transform: scale(0.97); }
+.fc-btn.ok { background: var(--ok); color: #fff; box-shadow: 0 2px 6px rgba(46, 158, 107, 0.28); }
+.fc-btn.ng { background: var(--ng-light); color: var(--ng); box-shadow: var(--shadow-sm); }
+.fc-btn { transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast); }
+.fc-btn:active { transform: translateY(1px) scale(0.97); }
 
 /* ---- 履修状況バー ---- */
 .coverage-bar {
@@ -573,6 +634,7 @@ html, body {
   font-weight: 700;
   cursor: pointer;
 }
+.replay-btn { transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast); }
 .replay-btn:active { transform: scale(0.97); }
 
 .listen-choices { display: flex; gap: 10px; }
@@ -626,10 +688,7 @@ html, body {
 
 .listen-warn { color: var(--ng); font-size: 12px; text-align: center; margin: 0 0 8px; }
 
-/* ---- 結果 ---- */
-.result-card { text-align: center; }
-.result-emoji { margin: 0; font-size: 44px; }
-.result-text { font-size: 15px; line-height: 1.9; }
+/* 結果画面のスタイルはファイル末尾の「結果画面(セッションの見せ場)」に集約 */
 
 /* ---- 記録 ---- */
 .chart {
@@ -733,10 +792,11 @@ html, body {
 dialog {
   border: none;
   border-radius: var(--radius);
-  box-shadow: 0 8px 30px rgba(35, 52, 63, 0.25);
+  box-shadow: var(--shadow-lg);
   padding: 20px;
   width: min(90vw, 380px);
 }
+dialog[open] { animation: page-in 0.24s var(--ease-out); }
 dialog::backdrop { background: rgba(35, 52, 63, 0.4); }
 dialog h2 { margin: 0 0 14px; font-size: 17px; }
 dialog label {
@@ -780,13 +840,17 @@ dialog label.check-row input {
 .primary-btn {
   padding: 10px 20px;
   border: none;
-  border-radius: 8px;
-  background: var(--accent);
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, #3480a3, var(--accent));
   color: #fff;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--shadow-accent);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast);
 }
+.primary-btn:active { transform: translateY(1px) scale(0.98); box-shadow: 0 1px 3px rgba(43, 110, 143, 0.30); }
+.primary-btn:disabled { box-shadow: none; }
 .danger-btn {
   padding: 10px 12px;
   border: none;
@@ -1127,3 +1191,128 @@ dialog label.check-row input {
   margin: -8px 0 10px;
   min-height: 14px;
 }
+
+/* ---- プログレスバー共通の底上げ ---- */
+/* 高さ違いのほぼ同一実装が7種あるので、質感だけまとめて足す。
+   フィルは background を上書きするとグラデ指定のバーが潰れるため、
+   background-image ではなく内側の白ハイライトで光沢を出す */
+.goal-bar, .level-bar, .ta-timer, .coverage-bar, .acc-bar, .league-bar, .mini-bar {
+  box-shadow: var(--shadow-inset);
+}
+.goal-bar-fill, .level-bar-fill, .ta-timer-fill, .coverage-fill,
+.acc-bar-fill, .league-bar-fill, .mini-bar-fill {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+/* .acc-bar-fill だけ他のバーと違い transition が無かった */
+.acc-bar-fill { transition: width 0.4s; }
+
+/* ---- 結果画面(セッションの見せ場) ---- */
+/* 5モードで markup が完全に同一なので、ここ1箇所が5画面すべてに効く */
+.result-card { text-align: center; padding-top: 22px; }
+/* パーフェクト時だけ金の枠と淡い光を纏う */
+.result-card.perfect {
+  box-shadow: var(--shadow-md), 0 0 0 2px var(--gold), 0 0 24px rgba(232, 161, 61, 0.30);
+}
+
+.result-hero {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--sp-3);
+}
+
+/* スコアリング: conic-gradient のドーナツ。--pct は app.js が rAF で 0→目標値へ動かす */
+.score-ring {
+  --pct: 0;
+  --ring-c: var(--accent);
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: conic-gradient(var(--ring-c) calc(var(--pct) * 1%), var(--line-soft) 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-inset);
+}
+.score-ring-inner {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: var(--shadow-sm);
+}
+.score-ring-pct {
+  font-size: var(--fs-display);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ring-c);
+  font-variant-numeric: tabular-nums;
+}
+.score-ring-frac {
+  font-size: var(--fs-sm);
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 絵文字はリングの右下に重ねるバッジに */
+.result-hero .result-emoji {
+  position: absolute;
+  right: calc(50% - 78px);
+  bottom: -4px;
+  margin: 0;
+  font-size: 34px;
+  filter: drop-shadow(0 2px 4px rgba(35, 52, 63, 0.22));
+  animation: pop-correct 0.45s var(--ease-spring) 0.35s both;
+}
+
+.result-title {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+}
+
+/* 1問ごとの振り返り。セッション中の .qdots の記録をそのまま持ってくる */
+.result-recap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: var(--sp-3);
+}
+.result-recap:empty { display: none; }
+
+/* 数字のタイル。今まで文章に埋もれていた値を拾い上げる */
+.result-stats {
+  display: flex;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.result-stats:empty { display: none; }
+.result-tile {
+  flex: 1;
+  background: var(--accent-light);
+  border-radius: var(--r-md);
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.result-tile-value {
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.result-tile-label { font-size: var(--fs-xs); color: var(--sub); }
+/* 獲得XPのタイルだけ金色で目立たせる */
+.result-tile.xp { background: var(--gold-soft); }
+.result-tile.xp .result-tile-value { color: var(--gold-deep); }
+
+.result-text { font-size: var(--fs-base); line-height: 1.8; color: var(--sub); margin: 0 0 var(--sp-2); }
