@@ -1509,6 +1509,42 @@ const READING = [
       { q: "What does Ms. Patel ask about?", jq: "パテルさんは何について尋ねていますか?", c: ["Whether she needs to bring anything","The cost of the training","Where her client meeting is","How to use the software"], a: 0, x: "メール末尾で「do I need to bring anything(何か持参する必要があるか)」と尋ねています。" },
     ],
   },
+  {
+      t: "プレスリリース",
+      passages: [
+        { label: "プレスリリース", text: "FOR IMMEDIATE RELEASE\n\nMeridian Software Appoints New Chief Executive Officer\n\nPORTLAND, June 14 — Meridian Software Inc. announced today that Laura Kim will become the company's new Chief Executive Officer, effective July 1. Kim previously served as Vice President of Product Development at the company for six years.\n\nThe outgoing CEO, Robert Ellis, will remain with the company in an advisory role through the end of the year to ensure a smooth transition. \"Laura has been instrumental in shaping our product strategy, and I have full confidence she will lead Meridian into its next phase of growth,\" Ellis said.\n\nUnder Kim's leadership, the company plans to expand its cloud services division and open a new research office in Austin, Texas, next spring.\n\nFor media inquiries, contact Sandra Wells at press@meridiansoftware.com.", jtext: "報道関係者各位\n\nメリディアン・ソフトウェア、新CEOを任命\n\nポートランド発、6月14日 — メリディアン・ソフトウェア社は本日、ローラ・キム氏が7月1日付で同社の新しい最高経営責任者(CEO)に就任すると発表した。キム氏はこれまで同社の製品開発担当副社長を6年間務めてきた。\n\n退任するCEOのロバート・エリス氏は、円滑な移行を確実にするため、年末まで顧問として会社に残る。「ローラは当社の製品戦略を形作るうえで重要な役割を果たしてきました。彼女がメリディアンを次の成長段階へ導いてくれると確信しています」とエリス氏は述べた。\n\nキム氏の指揮のもと、同社はクラウドサービス部門を拡大し、来春にはテキサス州オースティンに新しい研究拠点を開設する計画である。\n\n報道関係のお問い合わせは、サンドラ・ウェルズ(press@meridiansoftware.com)まで。" },
+      ],
+      qs: [
+        { q: "What is the purpose of the press release?", jq: "このプレスリリースの目的は何ですか?", c: ["To announce a change in company leadership","To report a decline in sales","To advertise a new software product","To announce the company's closing"], a: 0, x: "本文に新CEOローラ・キム氏の就任(a change in company leadership)が発表されています。" },
+        { q: "In the press release, the word \"instrumental\" is closest in meaning to", jq: "プレスリリースで、\"instrumental\" に最も意味が近いのは", c: ["important","musical","mechanical","temporary"], a: 0, x: "\"Laura has been instrumental in shaping our product strategy\" の instrumental は「重要な役割を果たす」の意味で important が最も近い。instrumental には「楽器の(musical)」という語義もあるが、ここでは人の貢献度を表す。「機械的な(mechanical)」「一時的な(temporary)」は文脈に合わない。" },
+        { q: "What will Robert Ellis do after Laura Kim becomes CEO?", jq: "ローラ・キム氏がCEOに就任した後、ロバート・エリス氏はどうしますか?", c: ["Continue advising the company until the end of the year","Retire immediately","Take over the Product Development department","Move to the new Austin office"], a: 0, x: "本文「remain with the company in an advisory role through the end of the year」の言い換え(advisory role=advising、through the end of the year=until the end of the year)。" },
+      ],
+    },
+    {
+      t: "請求書",
+      passages: [
+        { label: "請求書", text: "INVOICE\n\nCrestline Office Supplies\n482 Industrial Parkway, Denver, CO\n\nBill To: Parker & Wells Law Firm\nInvoice Number: INV-3391\nInvoice Date: October 3\nDue Date: November 2\n\nQty   Description                  Unit Price   Total\n10    A4 Printer Paper (case)      $28.00       $280.00\n5     Black Ink Cartridges         $34.00       $170.00\n2     Office Chairs                $95.00       $190.00\n\nSubtotal: $640.00\nShipping: $25.00\nTotal Due: $665.00\n\nPayment is due within 30 days of the invoice date. A 2% late fee will be applied to any balance not paid by the due date. Please make checks payable to Crestline Office Supplies or pay online at www.crestlinesupplies.com/pay.", jtext: "請求書\n\nクレストライン・オフィス用品\n482インダストリアル・パークウェイ、デンバー、コロラド州\n\n請求先: パーカー&ウェルズ法律事務所\n請求書番号: INV-3391\n請求日: 10月3日\n支払期限: 11月2日\n\n数量   品目                        単価        合計\n10     A4コピー用紙(箱)           28.00ドル    280.00ドル\n5      黒インクカートリッジ         34.00ドル    170.00ドル\n2      オフィスチェア               95.00ドル    190.00ドル\n\n小計: 640.00ドル\n送料: 25.00ドル\n合計金額: 665.00ドル\n\nお支払いは請求日から30日以内にお願いします。支払期限までにお支払いいただけない残高には2%の延滞料金が適用されます。小切手はクレストライン・オフィス用品宛にお願いするか、www.crestlinesupplies.com/payにてオンラインでお支払いください。" },
+      ],
+      qs: [
+        { q: "What is the purpose of this document?", jq: "この文書の目的は何ですか?", c: ["To request payment for items that were purchased","To confirm a change of address","To apologize for a shipping delay","To advertise a sale on office furniture"], a: 0, x: "請求書番号・品目・合計金額・支払期限が記載されており、購入した商品の代金支払いを求める文書です。" },
+        { q: "How much did the company charge for shipping?", jq: "この会社は送料としていくら請求しましたか?", c: ["$25.00","$28.00","$95.00","$640.00"], a: 0, x: "本文に「Shipping: $25.00」とあります。" },
+        { q: "What is indicated about payments made after the due date?", jq: "支払期限を過ぎた支払いについて何が示されていますか?", c: ["An extra charge will be added to the balance","The order will be canceled","A discount will no longer apply","The customer will be contacted by phone"], a: 0, x: "本文「A 2% late fee will be applied to any balance not paid by the due date(期限までに支払われない残高には2%の延滞料金が適用される)」の言い換え(late fee=extra charge)。" },
+      ],
+    },
+    {
+      t: "ダブルパッセージ",
+      passages: [
+        { label: "Eメール①", text: "To: careers@oakridgedesign.com\nFrom: Marcus Bell\nSubject: Application for Graphic Designer Position\nDate: April 9\n\nDear Hiring Manager,\n\nI am writing to apply for the Graphic Designer position posted on your website. I have four years of experience designing marketing materials for a retail chain, and I am skilled in both print and digital design.\n\nI have attached my resume and a link to my online portfolio. I am available for an interview any weekday afternoon and can start work within two weeks of receiving an offer.\n\nThank you for considering my application.\n\nSincerely,\nMarcus Bell", jtext: "宛先: careers@oakridgedesign.com\n差出人: マーカス・ベル\n件名: グラフィックデザイナー職への応募\n日付: 4月9日\n\n採用担当者様\n\n貴社のウェブサイトに掲載されていたグラフィックデザイナー職に応募したく、ご連絡いたしました。私は小売チェーンのマーケティング資料をデザインする仕事に4年間従事しており、印刷物とデジタルの両方のデザインに精通しています。\n\n履歴書とオンラインポートフォリオへのリンクを添付しました。平日の午後であればいつでも面接可能で、内定をいただいてから2週間以内に勤務を開始できます。\n\nご検討のほど、よろしくお願いいたします。\n\n敬具\nマーカス・ベル" },
+        { label: "Eメール②", text: "To: Marcus Bell\nFrom: Denise Yoon, Human Resources\nSubject: RE: Application for Graphic Designer Position\nDate: April 12\n\nDear Mr. Bell,\n\nThank you for your application. Your portfolio impressed our design team, and we would like to invite you for an interview.\n\nCould you come to our office on Thursday, April 17, at 2:00 P.M.? The interview will be conducted by our creative director and will last about 45 minutes. Please bring two printed samples of your recent work in addition to your digital portfolio.\n\nIf this time does not work for you, please suggest another afternoon slot, as you mentioned in your message.\n\nBest regards,\nDenise Yoon", jtext: "宛先: マーカス・ベル\n差出人: デニス・ユン(人事部)\n件名: RE: グラフィックデザイナー職への応募\n日付: 4月12日\n\nベル様\n\nご応募ありがとうございます。あなたのポートフォリオはデザインチームに好印象を与えましたので、面接にお越しいただきたく存じます。\n\n4月17日(木)午後2時に弊社オフィスへお越しいただけますでしょうか?面接はクリエイティブディレクターが担当し、約45分間の予定です。デジタルポートフォリオに加えて、最近の作品の印刷サンプルを2点ご持参ください。\n\nこの時間帯のご都合が合わない場合は、メールで触れていただいていた通り、別の午後の時間帯をご提案ください。\n\n敬具\nデニス・ユン" },
+      ],
+      qs: [
+        { q: "Why did Mr. Bell send the e-mail?", jq: "ベルさんはなぜEメールを送ったのですか?", c: ["To apply for a job opening","To request a salary increase","To resign from his current position","To ask about company policies"], a: 0, x: "本文「I am writing to apply for the Graphic Designer position」の言い換え(apply for the position=apply for a job opening)。" },
+        { q: "What are candidates asked to bring to the interview?", jq: "候補者は面接に何を持参するよう求められていますか?", c: ["Copies of their recent design work","A copy of their resume","A list of references","A laptop computer"], a: 0, x: "2通目のメールに「bring two printed samples of your recent work(最近の作品の印刷サンプルを2点持参)」とあります。履歴書は既に1通目で添付済みです。" },
+        { q: "Why did Ms. Yoon schedule the interview for the afternoon?", jq: "ユンさんはなぜ面接を午後に設定したのですか?", c: ["Because Mr. Bell said he was available in the afternoon","Because the creative director only works in the afternoon","Because the office closes in the morning","Because afternoon interviews are company policy"], a: 0, x: "1通目でベルさんが「available for an interview any weekday afternoon(平日の午後なら面接可能)」と伝えており、2通目でもユンさんが「as you mentioned in your message(メールで触れていた通り)」午後の時間帯を提案している。2つの文書を照合しないと答えられない設問。" },
+        { q: "In the second e-mail, the word \"impressed\" is closest in meaning to", jq: "2通目のEメールで、\"impressed\" に最も意味が近いのは", c: ["pleased","printed","hired","confused"], a: 0, x: "\"Your portfolio impressed our design team\" の impressed は「好印象を与えた」の意味で pleased が最も近い。impressed とつづりが似た printed(印刷された)は引っかけ。hired(雇われた)、confused(困惑した)は文脈に合わない。" },
+      ],
+    },
+
 ];
 
 // PART6: Part 6形式(長文穴埋め)。text内の {1}..{4} が空所。各設問 qs[n] が空所(n+1)に対応。
@@ -1574,6 +1610,37 @@ const PART6 = [
       { c: ["continue","stop","finish","quit"], a: 0, ins: false, x: "continue to do(〜し続ける)。文脈上「これからも楽しみ続ける」。", jq: "今後も長年にわたってサンライズ・マガジンをお楽しみいただけることを願っています。" },
     ],
   },
+  {
+      t: "図書館の利用案内",
+      text: "Riverside Public Library — Notice to Members\n\nStarting next month, the library will extend its weekday hours. The building will now {1} open until 8:00 P.M. on Tuesdays and Thursdays, giving members more time to browse the collection after work.\n\nWe also remind all members that library cards must be renewed every two years. If your card has expired, please bring a valid photo ID to the front desk to {2} it. {3}\n\nIn addition, the library is introducing a new online reservation system for meeting rooms. Members will be able to book a room up to two weeks {4} advance through our website.\n\nWe hope these changes make the library more convenient for everyone. Thank you for being a valued member of our community.",
+      qs: [
+        { c: ["remain","remains","remaining","remained"], a: 0, ins: false, x: "助動詞willの後は動詞の原形が続きます。remain open(開いたままである)。", jq: "建物は火曜と木曜、午後8時まで開館したままになります。" },
+        { c: ["renew","replace","cancel","return"], a: 0, ins: false, x: "会員証の更新について述べている文脈なので renew(更新する)が適切。replace(交換する)やcancel(解約する)は文脈に合いません。", jq: "有効期限が切れている場合は、有効な写真付き身分証明書を持って受付までお越しになり、更新してください。" },
+        { c: ["Cards that are not renewed within 30 days will be deactivated.","Refunds for lost books will be issued within a week.","The annual book sale has been canceled this year.","Members can receive a 10% discount on printing fees."], a: 0, ins: true, x: "直前でカードの更新について述べているので、更新しなかった場合の措置を説明する文が自然です。他は返金・セール中止・印刷割引の話で文脈に合いません。", jq: "30日以内に更新されなかったカードは無効になります。" },
+        { c: ["in","on","at","for"], a: 0, ins: false, x: "in advance(前もって)は決まった形の表現です。onやatはこの形を取りません。", jq: "会員はウェブサイトから最大2週間前に会議室を予約できるようになります。" },
+      ],
+    },
+    {
+      t: "プレスリリース",
+      text: "FOR IMMEDIATE RELEASE\n\nCedarview Robotics to Open New Manufacturing Facility in Ohio\n\nPORTLAND, March 14 — Cedarview Robotics announced today that it {1} a new manufacturing facility in Dayton, Ohio, scheduled to open in early 2027. The 200,000-square-foot facility will produce robotic arms for the automotive industry.\n\n\"This expansion reflects the strong demand {2} our products over the past two years,\" said CEO Martina Ruiz. {3}\n\nThe company expects the plant to employ around 300 workers within its first year of operation. Cedarview Robotics currently operates two facilities in Oregon and plans to begin construction in Ohio this summer. Local officials have welcomed the project, noting that it will bring significant economic {4} to the region.\n\nFor more information, contact the media relations office at press@cedarviewrobotics.com.",
+      qs: [
+        { c: ["will build","is building","has built","had built"], a: 0, ins: false, x: "2027年開業予定という未来の計画を述べているので未来形 will build が適切。has built/had built は完了形で「すでに建てた」ことになり文脈に矛盾します。", jq: "セダービュー・ロボティクス社は本日、オハイオ州デイトンに新しい製造拠点を建設すると発表しました。" },
+        { c: ["for","of","in","to"], a: 0, ins: false, x: "demand for A(Aに対する需要)という決まった前置詞の組み合わせです。", jq: "この拡張は、過去2年間における当社製品への強い需要を反映しています。" },
+        { c: ["The company also plans to offer training programs for new employees.","The facility will be closed for the winter holidays.","Customers can request a refund within 14 days of purchase.","The merger is expected to be finalized next year."], a: 0, ins: true, x: "直前で工場拡張と雇用の話をしているので、新入社員向けの取り組みを補足する文が自然です。他は休業案内・返金・合併の話で文脈に合いません。", jq: "同社は新入社員向けの研修プログラムも提供する予定です。" },
+        { c: ["benefits","beneficial","beneficially","benefiting"], a: 0, ins: false, x: "bring economic benefits to A(Aに経済的利益をもたらす)。benefitsは動詞bringの目的語となる名詞。beneficial(形容詞)はこの位置には置けません。", jq: "地元当局はこのプロジェクトを歓迎しており、地域に大きな経済的利益をもたらすと述べています。" },
+      ],
+    },
+    {
+      t: "ウェビナー登録案内",
+      text: "Register Now for Our Free Webinar!\n\nJoin Bright Path Marketing for a live webinar titled \"Digital Marketing Trends for 2027,\" hosted by senior strategist Lucas Bennett. The session will {1} on August 19 at 2:00 P.M. (EST) and will last approximately one hour.\n\nDuring the webinar, you will learn how to build an effective social media strategy and {2} customer engagement using data analytics. We will also cover practical tips for planning next year's advertising budget and choosing the right channels for your business. {3}\n\nRegistration is free, but space is limited to 500 participants, so we encourage you to sign up early. After registering, you will receive a confirmation email with a link {4} you can use to join the session. A recording will be sent to all registered participants after the event, even if they are unable to attend live.\n\nWe look forward to seeing you there!",
+      qs: [
+        { c: ["take place","take part","take charge","take over"], a: 0, ins: false, x: "take place(開催される)。take part(参加する)やtake charge(担当する)は主語がイベントである文脈に合いません。", jq: "セッションは8月19日午後2時(米国東部時間)に開催され、約1時間続きます。" },
+        { c: ["improve","improving","improved","improves"], a: 0, ins: false, x: "how to build ... and improve ... の形で、build と並列になる動詞の原形が入ります。", jq: "データ分析を使って顧客エンゲージメントを向上させる方法を学べます。" },
+        { c: ["No prior marketing experience is required to attend.","All attendees must pay a $50 registration fee.","The recording will not be made available afterward.","This offer is valid only for new customers."], a: 0, ins: true, x: "無料のオンライン講座への参加を呼びかける文脈なので、参加のハードルの低さを補足する文が自然です。他は有料・録画非公開・新規客限定の話で、直後の「登録は無料」という記述と矛盾します。", jq: "参加にあたり事前のマーケティング経験は必要ありません。" },
+        { c: ["that","who","whose","what"], a: 0, ins: false, x: "先行詞 a link(link=モノ)を修飾する関係代名詞には that(またはwhich)を使います。whoは人を先行詞に取るため不適切。", jq: "登録後、セッションに参加する際に使えるリンク付きの確認メールが届きます。" },
+      ],
+    },
+
 ];
 
 // PART3: Part 3(会話). 各会話は { t, lines:[{s,text,jtext}], qs:[{q,jq,c,a,x}] }。
