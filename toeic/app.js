@@ -1860,19 +1860,33 @@ function speak(text, rate) {
   });
 }
 
-// 話者ごとに声を変える。別の英語音声が2つ以上あれば男女に割り当て、
-// 無ければ同じ声のピッチをずらして区別する(どの端末でも話者が聞き分けられるように)。
-let voiceMW = null; // { m, w } 男女の音声(取れれば)
+// 話者ごとに声を変える。名前から性別が分かる英語音声が2つ以上あれば男女に割り当てる。
+// 性別が名前から判定できない端末(例: Chromeで「Google US English」しか無く
+// 「Google UK English Male」が入っていない環境や、汎用名しか無いAndroid端末)では、
+// 従来は男女とも同一のフォールバック音声にピッチ差だけを付けていたため、
+// ピッチ差が控えめ(0.82x/1.28x)だと「両方とも同じ(女性寄りの)声」に聞こえてしまっていた。
+// → 性別が判定できない場合は「せめて違う音声」を2つ確保し(それも無理なら同一音声のまま)、
+//   音声が同一(distinct=false)のケースだけピッチ差を大きく広げて聞き分けやすくする。
+let voiceMW = null; // { m, w, distinct }
 function pickVoicesMW() {
   if (voiceMW) return voiceMW;
   const vs = speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().startsWith("en"));
-  const w = vs.find((v) => /female|zira|samantha|susan|karen|moira|tessa|fiona|serena|catherine|hazel|linda|female|woman/i.test(v.name));
-  const m = vs.find((v) => v !== w && /male|david|daniel|alex|fred|george|mark|rishi|guy|aaron|man/i.test(v.name));
-  voiceMW = { m: m || null, w: w || null };
+  const wRe = /female|zira|samantha|susan|karen|moira|tessa|fiona|serena|catherine|hazel|linda|aria|jenny|michelle|monica|libby|sonia|abbi|olivia|emma|woman/i;
+  const mRe = /male|david|daniel|alex|fred|george|mark|rishi|guy|aaron|ryan|davis|andrew|brian|christopher|eric|roger|man/i;
+  let w = vs.find((v) => wRe.test(v.name)) || null;
+  let m = vs.find((v) => v !== w && mRe.test(v.name)) || null;
+  if (!m || !w || m === w) {
+    const rest = vs.filter((v) => v !== w);
+    if (!w) w = vs[0] || null;
+    if (!m || m === w) m = rest.find((v) => v !== w) || rest[0] || null;
+  }
+  voiceMW = { m, w, distinct: !!(m && w && m.name !== w.name) };
   return voiceMW;
 }
-// 話者→ピッチ(声の割り当てが無い端末でも聞き分けられるように)
-const SPEAKER_PITCH = { W: 1.28, W2: 1.45, M: 0.82, M2: 0.68, N: 1.0 };
+// 話者→ピッチ。男女で別音声を確保できた場合は控えめな差、
+// 同一音声しか無い場合はピッチだけで聞き分けられるよう差を大きくする。
+const SPEAKER_PITCH = { W: 1.22, W2: 1.4, M: 0.85, M2: 0.72, N: 1.0 };
+const SPEAKER_PITCH_SAME_VOICE = { W: 1.55, W2: 1.75, M: 0.55, M2: 0.4, N: 1.0 };
 
 function speakAs(text, speaker, rate) {
   return new Promise((resolve) => {
@@ -1883,7 +1897,8 @@ function speakAs(text, speaker, rate) {
     const assigned = isW ? mw.w : (speaker === "M" || speaker === "M2") ? mw.m : null;
     u.voice = assigned || pickVoice() || null;
     u.rate = rate || 0.95;
-    u.pitch = SPEAKER_PITCH[speaker] !== undefined ? SPEAKER_PITCH[speaker] : 1.0;
+    const pitchTable = mw.distinct ? SPEAKER_PITCH : SPEAKER_PITCH_SAME_VOICE;
+    u.pitch = pitchTable[speaker] !== undefined ? pitchTable[speaker] : 1.0;
     u.onend = resolve;
     u.onerror = resolve;
     speechSynthesis.speak(u);
