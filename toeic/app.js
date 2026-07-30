@@ -75,7 +75,8 @@ const MONTHLY_THEMES = [
 
 function defaultState() {
   return {
-    settings: { examDate: defaultExamDate(), goalWords: 20, goalQuiz: 10, goalListen: 10, goalRead: 6, targetScore: 600, sound: true, autoSpeak: true },
+    // voiceM/voiceW: 話者の声を手動指定する場合の音声名("" なら自動判定)
+    settings: { examDate: defaultExamDate(), goalWords: 20, goalQuiz: 10, goalListen: 10, goalRead: 6, targetScore: 600, sound: true, autoSpeak: true, voiceM: "", voiceW: "" },
     words: {},       // wordIndex -> { lv, next, seen, ok }
     quizStats: {},   // questionIndex -> { lv, next, seen, ok }(単語と同じ間隔反復)
     listenStats: {}, // part2Index -> { lv, next, seen, ok }(同上)
@@ -1865,25 +1866,45 @@ function speak(text, rate) {
 }
 
 // 話者ごとに声を変える。名前から性別が分かる英語音声が2つ以上あれば男女に割り当てる。
-// 性別が名前から判定できない端末(例: Chromeで「Google US English」しか無く
-// 「Google UK English Male」が入っていない環境や、汎用名しか無いAndroid端末)では、
-// 従来は男女とも同一のフォールバック音声にピッチ差だけを付けていたため、
-// ピッチ差が控えめ(0.82x/1.28x)だと「両方とも同じ(女性寄りの)声」に聞こえてしまっていた。
-// → 性別が判定できない場合は「せめて違う音声」を2つ確保し(それも無理なら同一音声のまま)、
-//   音声が同一(distinct=false)のケースだけピッチ差を大きく広げて聞き分けやすくする。
-// Apple等の「ノベルティ」効果音声(ロボット風/崩れた音質でわざと作られている)は、
-// 性別マッチにも「せめて違う声」フォールバックにも一切候補として使わない(2026-07-29追加)。
+// 性別が名前から判定できない端末では「せめて違う音声」を2つ確保し(それも無理なら同一音声のまま)、
+// 音声が同一(distinct=false)のケースだけピッチ/レート差を広げて聞き分けやすくする。
+// Apple等の「ノベルティ」効果音声(ロボット風/崩れた音質でわざと作られている)は候補から除外する。
+//
+// 【重要】性別判定の正規表現には必ず `\b`(単語境界)を付けること(2026-07-29に判明したバグ)。
+// 境界無しだと部分文字列マッチで "Sa(man)tha" が男性名、"fe(male)"/"wo(man)" も男性名として
+// 誤判定される。iOSは同名ボイス(Samantha等)を品質違いで複数返すため、女性ボイスが
+// そのまま「男性ボイス」として割り当てられ、男性の声が女性に聞こえる原因になっていた。
 const NOVELTY_VOICE_RE = /\b(fred|albert|bahh|bad news|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|deranged|hysterical)\b/i;
+const FEMALE_VOICE_RE = /\b(female|woman|zira|samantha|nicky|susan|karen|moira|tessa|fiona|serena|catherine|hazel|linda|aria|jenny|michelle|monica|libby|sonia|abbi|olivia|emma|martha|allison|ava|joanna|kate|shelley|vicki|victoria)\b/i;
+const MALE_VOICE_RE = /\b(male|man|david|daniel|alex|george|mark|rishi|guy|aaron|ryan|davis|andrew|brian|christopher|eric|roger|nathan|evan|arthur|oliver|tom|james|matthew|gordon|lee|reed|bruce|junior|ralph)\b/i;
+
+function isFemaleVoiceName(name) {
+  return FEMALE_VOICE_RE.test(name);
+}
+// 女性名に一致するものは、たとえ男性パターンに引っかかっても男性候補にしない(誤判定の二重防止)
+function isMaleVoiceName(name) {
+  return !isFemaleVoiceName(name) && MALE_VOICE_RE.test(name);
+}
+
 let voiceMW = null; // { m, w, distinct }
 function pickVoicesMW() {
   if (voiceMW) return voiceMW;
+  const seen = new Set();
   const vs = speechSynthesis
     .getVoices()
-    .filter((v) => v.lang && v.lang.toLowerCase().startsWith("en") && !NOVELTY_VOICE_RE.test(v.name));
-  const wRe = /female|zira|samantha|susan|karen|moira|tessa|fiona|serena|catherine|hazel|linda|aria|jenny|michelle|monica|libby|sonia|abbi|olivia|emma|woman/i;
-  const mRe = /male|david|daniel|alex|george|mark|rishi|guy|aaron|ryan|davis|andrew|brian|christopher|eric|roger|nathan|evan|arthur|oliver|man/i;
-  let w = vs.find((v) => wRe.test(v.name)) || null;
-  let m = vs.find((v) => v !== w && mRe.test(v.name)) || null;
+    .filter((v) => v.lang && v.lang.toLowerCase().startsWith("en") && !NOVELTY_VOICE_RE.test(v.name))
+    // iOSは同じ声を品質違いで複数返すため、名前で重複を除く(同名の別エントリを
+    // 「別の声」とみなして男女に割り当ててしまう事故を防ぐ)
+    .filter((v) => (seen.has(v.name) ? false : (seen.add(v.name), true)));
+
+  // 設定で明示的に選ばれた声があれば最優先(端末ごとの当たり外れを利用者自身で直せるように)
+  const pref = state.settings || {};
+  let w = vs.find((v) => v.name === pref.voiceW) || null;
+  let m = vs.find((v) => v.name === pref.voiceM) || null;
+
+  if (!w) w = vs.find((v) => isFemaleVoiceName(v.name)) || null;
+  if (!m) m = vs.find((v) => v !== w && isMaleVoiceName(v.name)) || null;
+
   if (!m || !w || m === w) {
     const rest = vs.filter((v) => v !== w);
     if (!w) w = vs[0] || null;
@@ -3112,8 +3133,55 @@ document.getElementById("settings-btn").addEventListener("click", () => {
   document.getElementById("target-score-input").value = state.settings.targetScore;
   document.getElementById("sound-input").checked = state.settings.sound;
   document.getElementById("autospeak-input").checked = state.settings.autoSpeak;
+  renderVoicePickers();
   settingsDialog.showModal();
 });
+
+// 端末が持っている英語音声の一覧をプルダウンに出す(自動判定が外れる端末向けの手動指定)
+function renderVoicePickers() {
+  const mSel = document.getElementById("voice-m-input");
+  const wSel = document.getElementById("voice-w-input");
+  const note = document.getElementById("voice-empty-note");
+  if (!mSel || !wSel) return;
+  const seen = new Set();
+  const vs = (speechOk ? speechSynthesis.getVoices() : [])
+    .filter((v) => v.lang && v.lang.toLowerCase().startsWith("en") && !NOVELTY_VOICE_RE.test(v.name))
+    .filter((v) => (seen.has(v.name) ? false : (seen.add(v.name), true)));
+  const auto = pickVoicesMW();
+  [[mSel, state.settings.voiceM, auto.m], [wSel, state.settings.voiceW, auto.w]].forEach(([sel, chosen, autoVoice]) => {
+    sel.innerHTML = "";
+    const optAuto = document.createElement("option");
+    optAuto.value = "";
+    optAuto.textContent = autoVoice ? `自動(${autoVoice.name})` : "自動";
+    sel.appendChild(optAuto);
+    vs.forEach((v) => {
+      const o = document.createElement("option");
+      o.value = v.name;
+      o.textContent = `${v.name}(${v.lang})`;
+      sel.appendChild(o);
+    });
+    sel.value = vs.some((v) => v.name === chosen) ? chosen : "";
+  });
+  note.classList.toggle("hidden", vs.length > 0);
+}
+
+// 試聴: 今プルダウンで選ばれている声で1文読み上げる(保存前でも確認できる)
+function testVoice(which) {
+  if (!speechOk) return;
+  audioStarted = true;
+  speechSynthesis.cancel();
+  const name = document.getElementById(which === "M" ? "voice-m-input" : "voice-w-input").value;
+  const v = speechSynthesis.getVoices().find((x) => x.name === name);
+  const u = new SpeechSynthesisUtterance(
+    which === "M" ? "Good morning. I'd like to confirm our meeting schedule." : "Sure. The meeting has been moved to three o'clock."
+  );
+  u.lang = "en-US";
+  u.voice = v || (which === "M" ? pickVoicesMW().m : pickVoicesMW().w) || pickVoice() || null;
+  u.rate = 0.95;
+  speechSynthesis.speak(u);
+}
+document.getElementById("voice-m-test").addEventListener("click", () => testVoice("M"));
+document.getElementById("voice-w-test").addEventListener("click", () => testVoice("W"));
 
 // ---- ショップ(炎ヒーローのカードから開く) ----
 const shopDialog = document.getElementById("shop-dialog");
@@ -3139,6 +3207,9 @@ document.getElementById("settings-save-btn").addEventListener("click", () => {
   if (ts >= 10 && ts <= 990) state.settings.targetScore = ts;
   state.settings.sound = document.getElementById("sound-input").checked;
   state.settings.autoSpeak = document.getElementById("autospeak-input").checked;
+  state.settings.voiceM = document.getElementById("voice-m-input").value;
+  state.settings.voiceW = document.getElementById("voice-w-input").value;
+  voiceMW = null; // 手動指定を次の再生から反映させる
   saveState();
   // ONに切り替えた直後に確認音を鳴らす(タップ直下なので自動再生制限もクリア)
   if (state.settings.sound) seTick();

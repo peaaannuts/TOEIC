@@ -602,6 +602,20 @@
       <span>単語カードを自動で読み上げる</span>
     </label>
 
+    <div class="voice-section">
+      <p class="voice-title">🔊 リスニングの話者の声</p>
+      <p class="voice-note">Part 3・4の男女の声です。端末によって自動判定がうまくいかない場合は、ここで直接選べます。「試聴」で聞き比べてから決められます。</p>
+      <label>男性の声
+        <select id="voice-m-input"></select>
+      </label>
+      <button type="button" class="secondary-btn voice-test-btn" id="voice-m-test">▶ 男性の声を試聴</button>
+      <label>女性の声
+        <select id="voice-w-input"></select>
+      </label>
+      <button type="button" class="secondary-btn voice-test-btn" id="voice-w-test">▶ 女性の声を試聴</button>
+      <p class="voice-empty hidden" id="voice-empty-note">この端末では音声一覧がまだ読み込まれていません。一度リスニングを再生してから設定を開くと選べるようになります。</p>
+    </div>
+
     <div class="backup-section">
       <p class="backup-title">💾 学習記録のバックアップ</p>
       <p class="backup-note">記録はこの端末・このURLのブラウザ内だけに保存されます。機種変更や別のURLへの引っ越しの前に「書き出す」で保存し、新しい端末で「復元する」と記録を持ち運べます。</p>

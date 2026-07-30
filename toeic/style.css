@@ -836,7 +836,8 @@ dialog label {
   font-size: 13px;
   color: var(--sub);
 }
-dialog input {
+dialog input,
+dialog select {
   display: block;
   width: 100%;
   margin-top: 4px;
@@ -845,6 +846,7 @@ dialog input {
   border-radius: 8px;
   font-size: 16px;
   color: var(--text);
+  background: var(--card, #fff);
 }
 dialog label.check-row {
   display: flex;
@@ -891,6 +893,16 @@ dialog label.check-row input {
   font-size: 13px;
   cursor: pointer;
 }
+
+.voice-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e9ec;
+}
+.voice-title { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--text); }
+.voice-note { margin: 0 0 10px; font-size: 12px; line-height: 1.5; color: var(--sub); }
+.voice-test-btn { width: 100%; margin: 6px 0 4px; }
+.voice-empty { margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: var(--sub); }
 
 .backup-section {
   margin-top: 18px;
