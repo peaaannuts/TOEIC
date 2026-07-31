@@ -1666,6 +1666,157 @@ const READING = [
       ],
     },
 
+  {
+    t: "アンケート依頼",
+    passages: [
+      {
+        label: "Eメール",
+        text: "To: Members of the Bayside Fitness Club\nFrom: Customer Experience Team\nDate: May 12\nSubject: Share Your Thoughts\n\nDear Member,\n\nAt Bayside Fitness Club, we are always looking for ways to serve you better. This month we are conducting our annual member survey, and we would greatly appreciate hearing from you.\n\nThe survey contains fifteen questions and should take no more than ten minutes to complete. You will be asked about the cleanliness of our facilities, the variety of our class offerings, and the helpfulness of our staff. Your responses will remain anonymous, and results will be reported only as group totals.\n\nAs a thank-you, every member who completes the survey by May 31 will receive a voucher for one free guest pass, which may be used at any time before the end of the year. Members who finish the survey will also be entered into a drawing for a three-month membership extension.\n\nYou can reach the survey by clicking the link at the bottom of this message, or by scanning the code posted at the front desk during your next visit.\n\nThank you for helping us improve.\n\nSincerely,\nThe Bayside Customer Experience Team",
+        jtext: "宛先: ベイサイド・フィットネスクラブ会員の皆様\n差出人: カスタマーエクスペリエンス・チーム\n日付: 5月12日\n件名: ご意見をお聞かせください\n\n会員の皆様\n\nベイサイド・フィットネスクラブでは、より良いサービスを提供する方法を常に模索しています。今月は年次会員アンケートを実施しており、皆様のお声をぜひお聞かせいただきたいと考えております。\n\nアンケートは15問で、所要時間は10分以内です。施設の清潔さ、クラスの種類の豊富さ、スタッフの対応について伺います。ご回答は匿名で扱われ、結果は全体の集計としてのみ報告されます。\n\nお礼として、5月31日までにアンケートにご回答いただいた会員の皆様には、ゲスト1名分の無料利用券を差し上げます。この券は年内であればいつでもご利用いただけます。また、回答された方は3か月分の会員期間延長が当たる抽選にもご参加いただけます。\n\nアンケートは、このメッセージ下部のリンクをクリックするか、次回ご来館の際にフロントに掲示されているコードを読み取ることでご利用いただけます。\n\n改善へのご協力をありがとうございます。\n\n敬具\nベイサイド・カスタマーエクスペリエンス・チーム",
+      },
+    ],
+    qs: [
+      {
+        q: "What is the main purpose of the e-mail?",
+        jq: "このEメールの主な目的は何ですか?",
+        c: [
+          "To encourage members to evaluate the club's services",
+          "To announce an increase in membership fees",
+          "To introduce a newly hired fitness instructor",
+          "To remind members to renew their contracts",
+        ],
+        a: 0,
+        x: "施設の清潔さ・クラスの種類・スタッフの対応について尋ねるアンケートへの回答を呼びかける内容なので、サービスを評価してもらうことが目的です(survey about our facilities and staff = evaluate the club's services)。",
+      },
+      {
+        q: "What will members who respond by May 31 receive?",
+        jq: "5月31日までに回答した会員は何を受け取りますか?",
+        c: [
+          "A pass that allows them to bring a visitor",
+          "A discount on their monthly dues",
+          "A complimentary personal training session",
+          "A three-month extension of their membership",
+        ],
+        a: 0,
+        x: "本文「will receive a voucher for one free guest pass」の言い換え(guest pass = a pass that allows them to bring a visitor)。3か月の会員期間延長は全員がもらえるものではなく抽選の賞品なので不正解です。",
+      },
+      {
+        q: "What is suggested about the survey results?",
+        jq: "アンケート結果について何が示されていますか?",
+        c: [
+          "Individual respondents will not be identified",
+          "They will be published in a local newspaper",
+          "They will be mailed to each member",
+          "They will be used to set new membership prices",
+        ],
+        a: 0,
+        x: "本文「Your responses will remain anonymous, and results will be reported only as group totals(回答は匿名で、結果は全体集計としてのみ報告される)」から、個々の回答者が特定されないことが読み取れます。",
+      },
+    ],
+  },
+  {
+    t: "オンラインチャット",
+    passages: [
+      {
+        label: "オンラインチャット",
+        text: "Rachel Kim (9:14 A.M.): Good morning. Has anyone heard back from the printer about the conference programs?\n\nTom Alvarez (9:16 A.M.): I called yesterday. They said the proof would be ready by noon today.\n\nRachel Kim (9:17 A.M.): That's cutting it close. We need to approve it before Thursday if we want delivery by the 20th.\n\nPriya Nair (9:19 A.M.): I can review the proof as soon as it arrives. I've already checked the speaker list twice.\n\nTom Alvarez (9:21 A.M.): One more thing — the venue changed the room assignment for the afternoon sessions. Did anyone update the schedule page?\n\nRachel Kim (9:22 A.M.): I took care of that on Monday. Ballroom B instead of Conference Room 3.\n\nPriya Nair (9:23 A.M.): Then we should be fine. I'll send my comments to the printer directly and copy you both.\n\nTom Alvarez (9:25 A.M.): That works. Let's just not print anything until Priya signs off.",
+        jtext: "レイチェル・キム(午前9時14分): おはようございます。会議のプログラムの件で印刷業者から連絡はありましたか?\n\nトム・アルバレス(午前9時16分): 昨日電話しました。校正刷りは今日の正午までに用意できるとのことでした。\n\nレイチェル・キム(午前9時17分): ぎりぎりですね。20日までに納品してもらうには、木曜日より前に承認する必要があります。\n\nプリヤ・ナイール(午前9時19分): 届き次第、私が校正刷りを確認できます。講演者リストはすでに2回確認済みです。\n\nトム・アルバレス(午前9時21分): もう一点、会場が午後のセッションの部屋割りを変更しました。誰かスケジュールのページを更新しましたか?\n\nレイチェル・キム(午前9時22分): 月曜日に対応しました。会議室3ではなく宴会場Bです。\n\nプリヤ・ナイール(午前9時23分): それなら問題ないですね。私のコメントは印刷業者に直接送って、お二人にもCCします。\n\nトム・アルバレス(午前9時25分): それでいきましょう。プリヤさんの承認が出るまでは印刷しないようにしましょう。",
+      },
+    ],
+    qs: [
+      {
+        q: "For whom do the writers most likely work?",
+        jq: "書き手たちはどこで働いていると考えられますか?",
+        c: [
+          "An organization that is hosting a conference",
+          "A company that prints promotional materials",
+          "A hotel that rents out meeting rooms",
+          "A travel agency that books business trips",
+        ],
+        a: 0,
+        x: "印刷業者に発注する側であり、会場と部屋割りを調整し、講演者リストやプログラムを管理していることから、会議を主催する側の組織だと分かります。印刷業者(the printer)や会場(the venue)は、いずれも彼らのやり取りの相手として登場します。",
+      },
+      {
+        q: 'At 9:17 A.M., what does Ms. Kim most likely mean when she writes, "That\'s cutting it close"?',
+        jq: "午前9時17分にキムさんが「That's cutting it close」と書いているのはどういう意味だと考えられますか?",
+        c: [
+          "She is concerned that there may not be enough time",
+          "She thinks the printing cost is higher than expected",
+          "She believes the proof will contain errors",
+          "She wants to reduce the number of programs",
+        ],
+        a: 0,
+        x: "cut it close は「ぎりぎりである」という意味の表現。直後に「20日までに納品してもらうには木曜より前に承認しなければならない」と述べており、時間的な余裕のなさを心配していることが分かります。",
+      },
+      {
+        q: "What does Ms. Nair agree to do?",
+        jq: "ナイールさんは何をすることに同意していますか?",
+        c: [
+          "Provide feedback on the proof",
+          "Contact the venue about the room change",
+          "Update the schedule page",
+          "Deliver the programs on the 20th",
+        ],
+        a: 0,
+        x: "ナイールさんは「校正刷りを確認できる」「自分のコメントを印刷業者に直接送る」と述べています(review the proof / send my comments = provide feedback on the proof)。スケジュールページの更新は9時22分にキムさんが済ませたと述べています。",
+      },
+    ],
+  },
+  {
+    t: "ダブルパッセージ",
+    passages: [
+      {
+        label: "お知らせ",
+        text: "Riverton Chamber of Commerce\nSmall Business Workshop Series — Spring Session\n\nAll workshops are held at the Riverton Community Hall, 40 Maple Street, from 6:30 P.M. to 8:30 P.M.\n\nMarch 4 — Writing a Business Plan (Instructor: Karen Doyle)\nMarch 11 — Managing Cash Flow (Instructor: Victor Osei)\nMarch 18 — Marketing on a Small Budget (Instructor: Karen Doyle)\nMarch 25 — Hiring Your First Employee (Instructor: Lena Ford)\n\nCost: $20 per workshop for Chamber members; $35 per workshop for non-members. Those who sign up for all four workshops at once receive 25 percent off the total.\n\nSpace is limited to 30 people per session. To register, visit www.rivertonchamber.org/workshops or call (555) 0142. Registration closes two days before each workshop.",
+        jtext: "リバートン商工会議所\n小規模事業者向けワークショップシリーズ — 春期\n\nすべてのワークショップは、メイプル通り40番地のリバートン・コミュニティホールにて、午後6時30分から午後8時30分まで開催されます。\n\n3月4日 — 事業計画書の書き方(講師: カレン・ドイル)\n3月11日 — 資金繰りの管理(講師: ビクター・オセイ)\n3月18日 — 少ない予算でのマーケティング(講師: カレン・ドイル)\n3月25日 — 初めての従業員の採用(講師: リナ・フォード)\n\n受講料: 商工会議所会員は1回20ドル、非会員は1回35ドル。4回すべてを一度にお申し込みの方は、合計金額から25パーセント割引となります。\n\n定員は各回30名です。お申し込みは www.rivertonchamber.org/workshops または (555) 0142 まで。受付は各ワークショップの2日前に締め切られます。",
+      },
+      {
+        label: "Eメール",
+        text: "To: registration@rivertonchamber.org\nFrom: n.barnes@harbormail.com\nDate: March 6\nSubject: Workshop question\n\nHello,\n\nI attended the first workshop in the series on March 4 and found it extremely useful. I had originally planned to sign up for the whole series, but I was unable to decide in time and paid the single-session rate instead.\n\nI would now like to attend the remaining three sessions. Is it possible to apply the series discount to those three, or does it only apply when all four are purchased together?\n\nI am especially hoping to attend the other session led by Ms. Doyle later this month, since her presentation style was very clear. Could you confirm that seats are still available for that date?\n\nOne more thing: I joined the Chamber yesterday, so I believe I now qualify for the lower rate. My membership number is RC-2291.\n\nThank you,\nNadia Barnes",
+        jtext: "宛先: registration@rivertonchamber.org\n差出人: n.barnes@harbormail.com\n日付: 3月6日\n件名: ワークショップについての質問\n\nこんにちは。\n\n3月4日にシリーズ初回のワークショップに参加し、大変有益でした。当初はシリーズ全体に申し込むつもりでしたが、期限までに決められず、単発の受講料をお支払いしました。\n\n残りの3回に参加したいと考えています。この3回にシリーズ割引を適用することは可能でしょうか。それとも4回すべてをまとめて購入した場合にのみ適用されるのでしょうか。\n\n特に、今月中に開催されるドイル先生によるもう一つのセッションに参加したいと思っています。先生の説明がとても分かりやすかったためです。その日の席がまだ空いているか確認していただけますか。\n\nもう一点、昨日商工会議所に入会しましたので、これからは割安な料金が適用されると認識しています。会員番号は RC-2291 です。\n\nよろしくお願いいたします。\nナディア・バーンズ",
+      },
+    ],
+    qs: [
+      {
+        q: "What is indicated about the workshop series?",
+        jq: "ワークショップシリーズについて何が示されていますか?",
+        c: [
+          "All of the sessions take place at the same location",
+          "The sessions are offered free of charge to Chamber members",
+          "The sessions are held on weekend afternoons",
+          "Each session is taught by a different instructor",
+        ],
+        a: 0,
+        x: "お知らせの冒頭に「All workshops are held at the Riverton Community Hall」とあり、全回が同じ会場で行われます。会員も1回20ドルかかり、開催は夜間、またドイル氏は2回担当しているため、他の選択肢はいずれも本文と矛盾します。",
+      },
+      {
+        q: "Which workshop does Ms. Barnes ask about attending?",
+        jq: "バーンズさんはどのワークショップへの参加について尋ねていますか?",
+        c: [
+          "Marketing on a Small Budget",
+          "Writing a Business Plan",
+          "Managing Cash Flow",
+          "Hiring Your First Employee",
+        ],
+        a: 0,
+        x: "2つの文書の照合問題。Eメールでバーンズさんは「今月中に開催されるドイル先生によるもう一つのセッション」に参加したいと述べています。お知らせを見ると、ドイル氏が担当するのは3月4日(参加済み)と3月18日の2回なので、該当するのは3月18日の「Marketing on a Small Budget」です。",
+      },
+      {
+        q: "How much did Ms. Barnes most likely pay for the March 4 workshop?",
+        jq: "バーンズさんは3月4日のワークショップにいくら支払ったと考えられますか?",
+        c: ["$35", "$20", "$105", "$140"],
+        a: 0,
+        x: "2つの文書の照合問題。バーンズさんは「単発の受講料を支払った」と述べ、商工会議所に入会したのは3月6日付Eメールの「昨日」=3月5日なので、3月4日の時点では非会員でした。お知らせによれば非会員の受講料は1回35ドルです。20ドルは会員価格、105ドルは非会員が4回一括申込した場合の割引後の合計、140ドルは4回分の割引前の合計です。",
+      },
+      {
+        q: 'In the e-mail, the word "qualify" is closest in meaning to',
+        jq: "Eメール中の「qualify」に最も意味が近いのは",
+        c: ["be eligible", "compete", "improve", "graduate"],
+        a: 0,
+        x: "qualify for the lower rate は「割安な料金を受ける資格がある」という意味で、be eligible(資格がある)が最も近い意味です。",
+      },
+    ],
+  }
 ];
 
 // PART6: Part 6形式(長文穴埋め)。text内の {1}..{4} が空所。各設問 qs[n] が空所(n+1)に対応。
@@ -1762,6 +1913,123 @@ const PART6 = [
       ],
     },
 
+  {
+    t: "保証案内",
+    text: "Thank you for purchasing a Nordvale kitchen appliance.\n\nAll Nordvale products are covered by a two-year limited warranty that begins on the date of purchase. This warranty covers defects in materials and workmanship under normal household use. Damage {1} by accident, misuse, or unauthorized repair is not included.\n\nIf your appliance stops working properly during the warranty period, please contact our support team before returning the item. A representative will help you determine {2} the problem can be solved at home. {3}\n\nTo return an item, you must present the original receipt. Refunds are issued to the original method of payment within ten business days of {4} the returned product. Items purchased more than 30 days ago may be exchanged but cannot be refunded.\n\nFor assistance, call our service line at (800) 555-0177, Monday through Friday.",
+    qs: [
+      {
+        c: ["caused", "causing", "causes", "cause"],
+        a: 0,
+        ins: false,
+        x: "Damage を後ろから修飾する過去分詞。「事故や誤用によって引き起こされた損傷」という受け身の関係なので caused が正解。causing だと損傷が何かを引き起こす能動の意味になり不自然です。",
+        jq: "事故、誤った使用、または許可されていない修理によって生じた損傷は含まれません。",
+      },
+      {
+        c: ["whether", "what", "unless", "which"],
+        a: 0,
+        ins: false,
+        x: "determine の目的語となる名詞節で、「〜かどうか」を表す whether が入ります。what/which は節の中で名詞の役割を果たす語が欠けている必要がありますが、ここは can be solved の主語 the problem がそろっており不足がありません。unless は「〜でない限り」という副詞節を導く接続詞で、determine の目的語にはなれません。",
+        jq: "担当者が、その問題をご自宅で解決できるかどうかを判断するお手伝いをします。",
+      },
+      {
+        c: [
+          "If it cannot, we will arrange a free inspection at an authorized service center.",
+          "All repairs must be paid for in full by the customer.",
+          "Nordvale no longer manufactures kitchen appliances.",
+          "Please attach a photograph of the product to every order.",
+        ],
+        a: 0,
+        ins: true,
+        x: "直前が「自宅で解決できるかどうかを判断する」なので、解決できなかった場合の次の手順を示す文が自然です。2は保証で無償修理がある文脈と矛盾し、3は製品を販売している前提と矛盾、4は返品手続きの話とかみ合いません。",
+        jq: "解決できない場合は、正規サービスセンターでの無料点検を手配いたします。",
+      },
+      {
+        c: ["receiving", "receive", "received", "to receive"],
+        a: 0,
+        ins: false,
+        x: "前置詞 of の目的語なので動名詞 receiving が入ります。within ten business days of receiving ... で「返送品を受領してから10営業日以内に」の意味になります。",
+        jq: "返金は、返送された商品を受領してから10営業日以内に、元のお支払い方法へ返金されます。",
+      },
+    ],
+  },
+  {
+    t: "新入社員向け案内",
+    text: "MEMO\n\nTo: All New Employees\nFrom: Diane Foster, Human Resources\nSubject: Orientation Schedule\n\nWelcome to Halbrook Industries. Your orientation program will begin on Monday, March 6, and will run for three days. During this time you will meet your department manager, tour our facilities, and complete the required safety training.\n\nPlease report to the main lobby at 8:30 A.M. on your first day. A member of our staff {1} you to the training room on the second floor. Be sure to bring a photo ID so that your employee badge can be issued.\n\n{2} the orientation, lunch will be provided in the staff cafeteria at no cost. If you have any dietary restrictions, please inform us by March 1 so that we can make appropriate arrangements. {3}\n\nWe understand that starting a new job can feel overwhelming. Your assigned mentor will contact you each week during your first month to answer questions and make sure your first weeks {4} smoothly.",
+    qs: [
+      {
+        c: ["will escort", "escorting", "to escort", "had escorted"],
+        a: 0,
+        ins: false,
+        x: "この文の述語動詞が必要で、初日にこれから起きることなので未来を表す will escort が正解。escorting や to escort では文の動詞が存在せず、had escorted は初日より前に完了した動作になり矛盾します。",
+        jq: "スタッフが2階の研修室までご案内します。",
+      },
+      {
+        c: ["Throughout", "Among", "Despite", "Except"],
+        a: 0,
+        ins: false,
+        x: "「オリエンテーションの期間を通してずっと」の意味で Throughout が適切。Among は複数のものの中で、Despite は逆接、Except は除外を表し、無料の昼食が提供されるという内容とかみ合いません。",
+        jq: "オリエンテーションの期間中は、社員食堂で昼食が無料で提供されます。",
+      },
+      {
+        c: [
+          "A vegetarian option is available upon request.",
+          "Employees are expected to bring their own lunch each day.",
+          "The cafeteria will be closed for renovations in March.",
+          "Parking permits must be purchased at the front desk.",
+        ],
+        a: 0,
+        ins: true,
+        x: "直前が「食事制限があれば事前に知らせてほしい」なので、食事の選択肢に関する補足が自然です。2と3は昼食が無料提供されるという直前の記述と矛盾し、4は食事の話題から外れています。",
+        jq: "ご希望に応じてベジタリアン向けのメニューもご用意できます。",
+      },
+      {
+        c: ["go", "goes", "going", "gone"],
+        a: 0,
+        ins: false,
+        x: "make sure に続く節の動詞。主語 your first weeks が複数形なので、三人称単数の goes は使えません。going や gone では節の述語動詞にならず文が成立しません。",
+        jq: "最初の数週間が順調に進むよう気を配ります。",
+      },
+    ],
+  },
+  {
+    t: "ニュースレター",
+    text: "Greenfield Community Center — Autumn Newsletter\n\nWe are pleased to announce that our renovated fitness studio will reopen on October 1. The project, which began in June, has taken slightly longer than {1}, but we are confident that members will find the wait worthwhile. The studio now features new flooring, improved ventilation, and twelve additional exercise machines.\n\nAlong with the renovation, we are introducing an expanded schedule of group classes. Yoga, cycling, and strength training will now be offered both in the morning and in the evening, {2} members who work during the day can attend as well. {3}\n\nMembers do not need to register in advance for most classes. However, because space in the cycling studio is limited, riders are asked to {4} a bike online up to 24 hours before each session.\n\nThank you for your patience during the construction period. We look forward to welcoming you back.",
+    qs: [
+      {
+        c: ["expected", "expecting", "expects", "expectation"],
+        a: 0,
+        ins: false,
+        x: "than expected で「予想されていたよりも」という決まった形。longer than (it was) expected の省略と考えると分かりやすいです。名詞の expectation では than の後ろの比較対象として文意が通りません。",
+        jq: "6月に始まったこの工事は予想よりわずかに長引きました。",
+      },
+      {
+        c: ["so that", "in order to", "because of", "due to"],
+        a: 0,
+        ins: false,
+        x: "後ろに「members can attend」という主語+動詞のそろった節が続くので、目的を表す接続詞 so that が入ります。in order to の後ろには動詞の原形、because of と due to の後ろには名詞が来るため、いずれも節を続けられません。",
+        jq: "ヨガ、サイクリング、筋力トレーニングは朝と夜の両方で開講され、日中働いている会員も参加できるようになります。",
+      },
+      {
+        c: [
+          "Weekend classes will continue on their current schedule.",
+          "All group classes have been canceled indefinitely.",
+          "The fitness studio will be open only to new members.",
+          "Membership fees will double beginning in October.",
+        ],
+        a: 0,
+        ins: true,
+        x: "直前で平日のクラスが朝夜に拡大されたと説明しているため、週末はどうなるのかを補足する文が自然につながります。2・3・4はいずれもクラスを拡充し会員の復帰を歓迎するという文書全体の趣旨と矛盾します。",
+        jq: "週末のクラスは現在の予定のまま続きます。",
+      },
+      {
+        c: ["reserve", "reserving", "reserved", "reservation"],
+        a: 0,
+        ins: false,
+        x: "be asked to do の形なので、to の後ろには動詞の原形 reserve が入ります。",
+        jq: "各セッションの24時間前までに、オンラインで自転車を予約するようお願いしています。",
+      },
+    ],
+  }
 ];
 
 // PART3: Part 3(会話). 各会話は { t, lines:[{s,text,jtext}], qs:[{q,jq,c,a,x}] }。
