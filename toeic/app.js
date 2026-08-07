@@ -1945,6 +1945,24 @@ function wait(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// 事前生成した音声ファイル(端末のTTSに依存しない)を再生する。playTokenでの
+// 割り込み制御はspeak()と揃える。再生失敗時はnullを返し、呼び出し側でTTSにフォールバックする。
+function playAudioFile(src, token) {
+  return new Promise((resolve) => {
+    const audio = new Audio(src);
+    let done = false;
+    const finish = (ok) => { if (!done) { done = true; resolve(ok); } };
+    audio.addEventListener("ended", () => finish(true));
+    audio.addEventListener("error", () => finish(false));
+    audio.play().catch(() => finish(false));
+    // 割り込み(次の問題/リプレイ)が来たら再生を止めて即resolveする
+    const checkToken = setInterval(() => {
+      if (token !== playToken) { audio.pause(); clearInterval(checkToken); finish(true); }
+      if (done) clearInterval(checkToken);
+    }, 100);
+  });
+}
+
 async function playListenAudio() {
   if (!speechOk) return;
   audioStarted = true;
@@ -1961,7 +1979,12 @@ async function playListenAudio() {
     if (token !== playToken) return;
     await speak(labels[i] + ".", 1.0);
     if (token !== playToken) return;
-    await speak(item.r[listenOrder[i]]);
+    const orig = listenOrder[i];
+    const audioFile = item.audio && item.audio[orig];
+    const ok = audioFile && await playAudioFile(`audio/part1/${audioFile}`, token);
+    if (token !== playToken) return;
+    if (!ok) await speak(item.r[orig]);
+    if (token !== playToken) return;
     await wait(500);
   }
 }

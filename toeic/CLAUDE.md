@@ -453,12 +453,44 @@ Part3-4/Part6-7)で共通ヘルパー化**し、各ハンドラは1〜数行の�
 
 ## 音声(TTS)
 
-`speechSynthesis`(ブラウザ内蔵、無料・オフライン)を使用。音声ファイルは一切使っていない。
+`speechSynthesis`(ブラウザ内蔵、無料・オフライン)を使用。
 
 - リスニング(Part1/Part2)の質問・選択肢読み上げ: `playListenAudio()`
 - 単語カードの自動読み上げ+🔊ボタン: `speakWord()`(設定 `autoSpeak` でON/OFF)
 - iOS Safari対策として、各モード開始ボタンの直下で空発話を1回鳴らして音声をアンロックしている
   (`audioStarted` フラグで、リスニング未使用ならTTSに一切触れないようにもしてある)
+
+### Part 1の音声を事前生成ファイルに置き換え(2026-08-07、パイロット導入)
+
+端末内蔵TTS任せだと、声質・アクセントが完全に端末依存という課題があった
+(男女の声が同じに聞こえる問題の根本原因もこれ)。Part 1(写真描写、16問)は
+選択肢の英文が固定コンテンツなので、**事前に音声ファイル化してリポジトリに同梱**する方式に
+切り替えた(サーバー不要・静的ホスティングの設計方針は維持。音声ファイルもSVGアイコンと
+同じ扱いの静的アセット)。
+
+- **生成手段**: `edge-tts`(正確にはnpmの`msedge-tts`パッケージ)。Microsoft Edge/PowerPointが
+  内部で使っている無料のオンラインTTSをAPIキー無しで叩けるOSSラッパー。**完全無料・クレジット制限なし**で、
+  かつ声ごとにアクセントが明示されている(`en-US-GuyNeural`/`en-GB-RyanNeural`等)ため、
+  Web Speech APIの端末依存な声選び(`pickVoicesMW()`の名前ヒューリスティック)と違い、
+  米・英のアクセントを確実に作り分けられる。
+  - 検討した他の手段: (1) クラウドTTS APIをアプリから直接呼ぶ→サーバー不要の設計方針と矛盾し課金も発生するため却下。
+    (2) Higgsfield MCPの`generate_audio`→初期パイロットで64クリップ中43クリップまで生成したところで
+    無料クレジットが尽きて中断(`Out of credits on free (null) plan`)。生成し直しが必要になったため、
+    完全無料のedge-ttsに切り替えて全64クリップを生成し直した(Higgsfield生成分は破棄)。
+- **生成スクリプト**: リポジトリには含めていない(一回限りの生成作業のため)。`npm install msedge-tts`した上で
+  `MsEdgeTTS.setMetadata(voiceName, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3)` → `toFile()`で
+  `toeic/audio/part1/q{問題番号}_{a|b|c|d}.mp3`として書き出した。声は4種を問題ごとにローテーション
+  (Q1,5,9,13=`en-US-GuyNeural`、Q2,6,10,14=`en-US-JennyNeural`、Q3,7,11,15=`en-GB-RyanNeural`、
+  Q4,8,12,16=`en-GB-SoniaNeural`)。1問内のA〜D選択肢は本番同様に同じ声。合計64ファイルで約1.1MB。
+- **データ**: `data.js`の`PART1`各要素に`r`と対応する`audio: ["q1_a.mp3", ...]`を追加
+  (`r`と同じ並び=シャッフル前の原順。表示時にシャッフルされる`listenOrder`はaudio参照時にも
+  同じマッピングで使う)。
+- **再生ロジック**: `playListenAudio()`(app.js)内、選択肢の読み上げ部分で`item.audio`があれば
+  新設の`playAudioFile(src, token)`(`<audio>`要素で再生、`playToken`による中断制御をspeak()と揃えている)
+  を使い、無ければ従来通り`speak()`(TTS)にフォールバックする。"Look at the picture."とA〜Dのラベル読みは
+  今回のスコープ外で従来通りTTSのまま。
+- **PWAキャッシュ**: `sw.js`の`ASSETS`に`audio/part1/*.mp3`を全64件追加、`CACHE_NAME`を`v48`に。
+- **今後**: Part 1で効果を確認できたら、Part 2/3/4への展開を検討(件数が多いため生成の手間とファイルサイズ増を要検討)。
 
 ### 男女の声が両方とも同じに聞こえる問題(2026-07-29修正)
 
