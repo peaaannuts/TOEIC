@@ -701,7 +701,9 @@ html, body {
 
 .listen-script { margin: 4px 0 10px; }
 .script-q {
+  position: relative;
   margin: 8px 0;
+  padding-right: 40px;
   font-size: 14px;
   line-height: 1.6;
 }

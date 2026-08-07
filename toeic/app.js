@@ -1985,7 +1985,7 @@ async function replayScriptLine({ text, audioFile, speaker }, btn) {
   if (btn) btn.disabled = true;
   let ok = false;
   if (audioFile) {
-    ok = await playAudioFile(`audio/part1/${audioFile}`, token, REPLAY_RATE, () => reviewPlayToken);
+    ok = await playAudioFile(audioFile, token, REPLAY_RATE, () => reviewPlayToken);
   }
   if (!ok && token === reviewPlayToken) {
     if (speaker) await speakAs(text, speaker, REPLAY_RATE);
@@ -2013,7 +2013,14 @@ async function playListenAudio() {
   await wait(200);
   if (token !== playToken) return;
   const item = listenData()[listenQueue[listenPos]];
-  await speak(listenMode === 1 ? "Look at the picture." : item.q);
+  const audioDir = `audio/part${listenMode}/`;
+  if (listenMode === 1) {
+    await speak("Look at the picture.");
+  } else {
+    const qOk = item.qAudio && await playAudioFile(`${audioDir}${item.qAudio}`, token, 1, () => playToken);
+    if (token !== playToken) return;
+    if (!qOk) await speak(item.q);
+  }
   if (token !== playToken) return;
   await wait(700);
   const labels = ["A", "B", "C", "D"];
@@ -2023,7 +2030,7 @@ async function playListenAudio() {
     if (token !== playToken) return;
     const orig = listenOrder[i];
     const audioFile = item.audio && item.audio[orig];
-    const ok = audioFile && await playAudioFile(`audio/part1/${audioFile}`, token, 1, () => playToken);
+    const ok = audioFile && await playAudioFile(`${audioDir}${audioFile}`, token, 1, () => playToken);
     if (token !== playToken) return;
     if (!ok) await speak(item.r[orig]);
     if (token !== playToken) return;
@@ -2223,10 +2230,12 @@ function answerListen(chosen, btn) {
 
   const script = document.getElementById("listen-script");
   script.innerHTML = "";
+  const audioDir = `audio/part${listenMode}/`;
   if (item.jq) {
     const qLine = document.createElement("p");
     qLine.className = "script-q";
     qLine.innerHTML = `<strong>${item.q}</strong><br><span>${item.jq}</span>`;
+    qLine.appendChild(makeReplayBtn({ text: item.q, audioFile: item.qAudio && audioDir + item.qAudio }));
     script.appendChild(qLine);
   }
   ["A", "B", "C", "D"].slice(0, item.r.length).forEach((label, pos) => {
@@ -2237,7 +2246,7 @@ function answerListen(chosen, btn) {
       (orig === 0 ? " correct" : "") +
       (orig === chosen && orig !== 0 ? " wrong" : "");
     line.innerHTML = `(${label}) ${item.r[orig]}<br><span>${item.jr[orig]}</span>`;
-    line.appendChild(makeReplayBtn({ text: item.r[orig], audioFile: item.audio && item.audio[orig] }));
+    line.appendChild(makeReplayBtn({ text: item.r[orig], audioFile: item.audio && audioDir + item.audio[orig] }));
     script.appendChild(line);
   });
 
@@ -2353,12 +2362,19 @@ async function playL34Audio() {
   await wait(200);
   if (token !== playToken) return;
   const set = currentL34Set();
-  await speakAs(l34Section === 3 ? "Listen to the following conversation." : "Listen to the following talk.", "N", 1.0);
+  const audioDir = `audio/part${l34Section}/`;
+  const narratorOk = await playAudioFile(`${audioDir}narrator.mp3`, token, 1, () => playToken);
   if (token !== playToken) return;
+  if (!narratorOk) {
+    await speakAs(l34Section === 3 ? "Listen to the following conversation." : "Listen to the following talk.", "N", 1.0);
+    if (token !== playToken) return;
+  }
   await wait(500);
   for (const line of set.lines) {
     if (token !== playToken) return;
-    await speakAs(line.text, line.s);
+    const ok = line.audio && await playAudioFile(`${audioDir}${line.audio}`, token, 1, () => playToken);
+    if (token !== playToken) return;
+    if (!ok) await speakAs(line.text, line.s);
     if (token !== playToken) return;
     await wait(320);
   }
@@ -2551,11 +2567,12 @@ function renderL34Script() {
   const set = currentL34Set();
   const script = document.getElementById("listen34-script");
   script.innerHTML = "";
+  const audioDir = `audio/part${l34Section}/`;
   set.lines.forEach((line) => {
     const p = document.createElement("p");
     p.className = "script-line";
     p.innerHTML = `<strong>${spkLabel(line.s)}:</strong> ${escapeHtml(line.text)}<br><span>${escapeHtml(line.jtext || "")}</span>`;
-    p.appendChild(makeReplayBtn({ text: line.text, speaker: line.s }));
+    p.appendChild(makeReplayBtn({ text: line.text, speaker: line.s, audioFile: line.audio && audioDir + line.audio }));
     script.appendChild(p);
   });
 }

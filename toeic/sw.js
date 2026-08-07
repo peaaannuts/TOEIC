@@ -1,4 +1,4 @@
-const CACHE_NAME = "toeic600-v49";
+const CACHE_NAME = "toeic600-v50";
 const ASSETS = [
   ".",
   "index.html",
@@ -7,70 +7,6 @@ const ASSETS = [
   "data.js",
   "manifest.webmanifest",
   "icon.svg",
-  "audio/part1/q1_a.mp3",
-  "audio/part1/q1_b.mp3",
-  "audio/part1/q1_c.mp3",
-  "audio/part1/q1_d.mp3",
-  "audio/part1/q2_a.mp3",
-  "audio/part1/q2_b.mp3",
-  "audio/part1/q2_c.mp3",
-  "audio/part1/q2_d.mp3",
-  "audio/part1/q3_a.mp3",
-  "audio/part1/q3_b.mp3",
-  "audio/part1/q3_c.mp3",
-  "audio/part1/q3_d.mp3",
-  "audio/part1/q4_a.mp3",
-  "audio/part1/q4_b.mp3",
-  "audio/part1/q4_c.mp3",
-  "audio/part1/q4_d.mp3",
-  "audio/part1/q5_a.mp3",
-  "audio/part1/q5_b.mp3",
-  "audio/part1/q5_c.mp3",
-  "audio/part1/q5_d.mp3",
-  "audio/part1/q6_a.mp3",
-  "audio/part1/q6_b.mp3",
-  "audio/part1/q6_c.mp3",
-  "audio/part1/q6_d.mp3",
-  "audio/part1/q7_a.mp3",
-  "audio/part1/q7_b.mp3",
-  "audio/part1/q7_c.mp3",
-  "audio/part1/q7_d.mp3",
-  "audio/part1/q8_a.mp3",
-  "audio/part1/q8_b.mp3",
-  "audio/part1/q8_c.mp3",
-  "audio/part1/q8_d.mp3",
-  "audio/part1/q9_a.mp3",
-  "audio/part1/q9_b.mp3",
-  "audio/part1/q9_c.mp3",
-  "audio/part1/q9_d.mp3",
-  "audio/part1/q10_a.mp3",
-  "audio/part1/q10_b.mp3",
-  "audio/part1/q10_c.mp3",
-  "audio/part1/q10_d.mp3",
-  "audio/part1/q11_a.mp3",
-  "audio/part1/q11_b.mp3",
-  "audio/part1/q11_c.mp3",
-  "audio/part1/q11_d.mp3",
-  "audio/part1/q12_a.mp3",
-  "audio/part1/q12_b.mp3",
-  "audio/part1/q12_c.mp3",
-  "audio/part1/q12_d.mp3",
-  "audio/part1/q13_a.mp3",
-  "audio/part1/q13_b.mp3",
-  "audio/part1/q13_c.mp3",
-  "audio/part1/q13_d.mp3",
-  "audio/part1/q14_a.mp3",
-  "audio/part1/q14_b.mp3",
-  "audio/part1/q14_c.mp3",
-  "audio/part1/q14_d.mp3",
-  "audio/part1/q15_a.mp3",
-  "audio/part1/q15_b.mp3",
-  "audio/part1/q15_c.mp3",
-  "audio/part1/q15_d.mp3",
-  "audio/part1/q16_a.mp3",
-  "audio/part1/q16_b.mp3",
-  "audio/part1/q16_c.mp3",
-  "audio/part1/q16_d.mp3",
 ];
 
 self.addEventListener("install", (e) => {
@@ -88,6 +24,25 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
+  // 音声ファイルはPart1〜4合計で700件超あり、インストール時の一括プリキャッシュだと
+  // 初回起動が重くなる(数MB〜十数MBを一気に取得することになる)。そのため音声だけは
+  // 「初回再生時にキャッシュへ保存し、以後はキャッシュから返す」という遅延キャッシュにする
+  // (2回目以降の再生・オフライン再生は自動的にできるようになる)。
+  if (e.request.url.includes("/audio/")) {
+    e.respondWith(
+      caches.match(e.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(e.request).then((res) => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(e.request, clone));
+          }
+          return res;
+        });
+      })
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((cached) => cached || fetch(e.request))
   );
