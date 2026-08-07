@@ -76,7 +76,8 @@ const MONTHLY_THEMES = [
 function defaultState() {
   return {
     // voiceM/voiceW: 話者の声を手動指定する場合の音声名("" なら自動判定)
-    settings: { examDate: defaultExamDate(), goalWords: 20, goalQuiz: 10, goalListen: 10, goalRead: 6, targetScore: 600, sound: true, autoSpeak: true, voiceM: "", voiceW: "" },
+    // speedMultiplier: 再生速度の倍率(1.0が基準)。全ての読み上げ・音声ファイル再生に掛け合わさる
+    settings: { examDate: defaultExamDate(), goalWords: 20, goalQuiz: 10, goalListen: 10, goalRead: 6, targetScore: 600, sound: true, autoSpeak: true, voiceM: "", voiceW: "", speedMultiplier: 1.0 },
     words: {},       // wordIndex -> { lv, next, seen, ok }
     quizStats: {},   // questionIndex -> { lv, next, seen, ok }(単語と同じ間隔反復)
     listenStats: {}, // part2Index -> { lv, next, seen, ok }(同上)
@@ -1852,13 +1853,19 @@ if (speechOk) {
   };
 }
 
+// 設定の再生速度倍率を適用する(全ての読み上げ・音声ファイル再生で共通のルール:
+// 実際のレート = そのコンテキストの基準レート × speedMultiplier)。
+function spd(rate) {
+  return rate * (state.settings.speedMultiplier || 1);
+}
+
 function speak(text, rate) {
   return new Promise((resolve) => {
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "en-US";
     const v = pickVoice();
     if (v) u.voice = v;
-    u.rate = rate || 0.92;
+    u.rate = spd(rate || 0.92);
     u.onend = resolve;
     u.onerror = resolve;
     speechSynthesis.speak(u);
@@ -1932,9 +1939,11 @@ function speakAs(text, speaker, rate) {
     u.voice = assigned || pickVoice() || null;
     const pitchTable = mw.distinct ? SPEAKER_PITCH : SPEAKER_PITCH_SAME_VOICE;
     u.pitch = pitchTable[speaker] !== undefined ? pitchTable[speaker] : 1.0;
-    u.rate = mw.distinct
-      ? (rate || 0.95)
-      : (SPEAKER_RATE_SAME_VOICE[speaker] !== undefined ? SPEAKER_RATE_SAME_VOICE[speaker] : (rate || 0.95));
+    // rateが明示指定された場合は最優先(答え合わせ画面の🔁スロー再生など、話者の聞き分けより
+    // 「指定した速さで聞きたい」意図を優先すべき場面のため)。未指定時のみ従来の話者別テーブルを使う。
+    u.rate = spd(rate !== undefined ? rate : (mw.distinct
+      ? 0.95
+      : (SPEAKER_RATE_SAME_VOICE[speaker] !== undefined ? SPEAKER_RATE_SAME_VOICE[speaker] : 0.95)));
     u.onend = resolve;
     u.onerror = resolve;
     speechSynthesis.speak(u);
@@ -1947,20 +1956,53 @@ function wait(ms) {
 
 // 事前生成した音声ファイル(端末のTTSに依存しない)を再生する。playTokenでの
 // 割り込み制御はspeak()と揃える。再生失敗時はnullを返し、呼び出し側でTTSにフォールバックする。
-function playAudioFile(src, token) {
+// tokenGetter省略時は「割り込みなし(常に最後まで再生)」として扱う(答え合わせ画面の単発再生用)。
+function playAudioFile(src, token, rate, tokenGetter) {
   return new Promise((resolve) => {
     const audio = new Audio(src);
+    audio.playbackRate = spd(rate || 1);
     let done = false;
     const finish = (ok) => { if (!done) { done = true; resolve(ok); } };
     audio.addEventListener("ended", () => finish(true));
     audio.addEventListener("error", () => finish(false));
     audio.play().catch(() => finish(false));
+    if (!tokenGetter) return;
     // 割り込み(次の問題/リプレイ)が来たら再生を止めて即resolveする
     const checkToken = setInterval(() => {
-      if (token !== playToken) { audio.pause(); clearInterval(checkToken); finish(true); }
+      if (token !== tokenGetter()) { audio.pause(); clearInterval(checkToken); finish(true); }
       if (done) clearInterval(checkToken);
     }, 100);
   });
+}
+
+// 答え合わせ画面で「🔁」ボタンから、聞き取れなかった1文だけをスロー再生し直す。
+// セッション中の再生制御(playToken)とは独立させ、連打で前の再生を止められるようにする。
+let reviewPlayToken = 0;
+const REPLAY_RATE = 0.75; // 設定の再生速度倍率ともさらに掛け合わさる(spd()経由)
+async function replayScriptLine({ text, audioFile, speaker }, btn) {
+  const token = ++reviewPlayToken;
+  if (speechOk) speechSynthesis.cancel();
+  if (btn) btn.disabled = true;
+  let ok = false;
+  if (audioFile) {
+    ok = await playAudioFile(`audio/part1/${audioFile}`, token, REPLAY_RATE, () => reviewPlayToken);
+  }
+  if (!ok && token === reviewPlayToken) {
+    if (speaker) await speakAs(text, speaker, REPLAY_RATE);
+    else await speak(text, REPLAY_RATE);
+  }
+  if (btn && token === reviewPlayToken) btn.disabled = false;
+}
+
+// スクリプト表示内に埋め込む「🔁」ボタンを生成する共通ヘルパー
+function makeReplayBtn(opts) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "line-replay-btn";
+  btn.textContent = "🔁";
+  btn.setAttribute("aria-label", "ゆっくり聞き直す");
+  btn.addEventListener("click", () => replayScriptLine(opts, btn));
+  return btn;
 }
 
 async function playListenAudio() {
@@ -1981,7 +2023,7 @@ async function playListenAudio() {
     if (token !== playToken) return;
     const orig = listenOrder[i];
     const audioFile = item.audio && item.audio[orig];
-    const ok = audioFile && await playAudioFile(`audio/part1/${audioFile}`, token);
+    const ok = audioFile && await playAudioFile(`audio/part1/${audioFile}`, token, 1, () => playToken);
     if (token !== playToken) return;
     if (!ok) await speak(item.r[orig]);
     if (token !== playToken) return;
@@ -2195,6 +2237,7 @@ function answerListen(chosen, btn) {
       (orig === 0 ? " correct" : "") +
       (orig === chosen && orig !== 0 ? " wrong" : "");
     line.innerHTML = `(${label}) ${item.r[orig]}<br><span>${item.jr[orig]}</span>`;
+    line.appendChild(makeReplayBtn({ text: item.r[orig], audioFile: item.audio && item.audio[orig] }));
     script.appendChild(line);
   });
 
@@ -2512,6 +2555,7 @@ function renderL34Script() {
     const p = document.createElement("p");
     p.className = "script-line";
     p.innerHTML = `<strong>${spkLabel(line.s)}:</strong> ${escapeHtml(line.text)}<br><span>${escapeHtml(line.jtext || "")}</span>`;
+    p.appendChild(makeReplayBtn({ text: line.text, speaker: line.s }));
     script.appendChild(p);
   });
 }
@@ -3156,9 +3200,18 @@ document.getElementById("settings-btn").addEventListener("click", () => {
   document.getElementById("target-score-input").value = state.settings.targetScore;
   document.getElementById("sound-input").checked = state.settings.sound;
   document.getElementById("autospeak-input").checked = state.settings.autoSpeak;
+  const speedInput = document.getElementById("speed-input");
+  speedInput.value = state.settings.speedMultiplier || 1.0;
+  updateSpeedLabel();
   renderVoicePickers();
   settingsDialog.showModal();
 });
+
+function updateSpeedLabel() {
+  const v = Number(document.getElementById("speed-input").value);
+  document.getElementById("speed-value-label").textContent = v.toFixed(2) + "倍";
+}
+document.getElementById("speed-input").addEventListener("input", updateSpeedLabel);
 
 // 端末が持っている英語音声の一覧をプルダウンに出す(自動判定が外れる端末向けの手動指定)
 function renderVoicePickers() {
@@ -3230,6 +3283,8 @@ document.getElementById("settings-save-btn").addEventListener("click", () => {
   if (ts >= 10 && ts <= 990) state.settings.targetScore = ts;
   state.settings.sound = document.getElementById("sound-input").checked;
   state.settings.autoSpeak = document.getElementById("autospeak-input").checked;
+  const speed = Number(document.getElementById("speed-input").value);
+  if (speed >= 0.7 && speed <= 1.15) state.settings.speedMultiplier = speed;
   state.settings.voiceM = document.getElementById("voice-m-input").value;
   state.settings.voiceW = document.getElementById("voice-w-input").value;
   voiceMW = null; // 手動指定を次の再生から反映させる

@@ -486,11 +486,32 @@ Part3-4/Part6-7)で共通ヘルパー化**し、各ハンドラは1〜数行の�
   (`r`と同じ並び=シャッフル前の原順。表示時にシャッフルされる`listenOrder`はaudio参照時にも
   同じマッピングで使う)。
 - **再生ロジック**: `playListenAudio()`(app.js)内、選択肢の読み上げ部分で`item.audio`があれば
-  新設の`playAudioFile(src, token)`(`<audio>`要素で再生、`playToken`による中断制御をspeak()と揃えている)
+  新設の`playAudioFile(src, token, rate, tokenGetter)`(`<audio>`要素で再生、`tokenGetter`で参照する
+  トークンによる中断制御をspeak()と揃えている。`tokenGetter`省略時は割り込み無しの単発再生)
   を使い、無ければ従来通り`speak()`(TTS)にフォールバックする。"Look at the picture."とA〜Dのラベル読みは
   今回のスコープ外で従来通りTTSのまま。
 - **PWAキャッシュ**: `sw.js`の`ASSETS`に`audio/part1/*.mp3`を全64件追加、`CACHE_NAME`を`v48`に。
 - **今後**: Part 1で効果を確認できたら、Part 2/3/4への展開を検討(件数が多いため生成の手間とファイルサイズ増を要検討)。
+
+### 再生速度調整+文単位リピート(2026-08-07追加、「聞き取れない/集中が続かない」対策)
+
+ユーザーから「リスニングの苦手意識が解消されない」と相談された。掘り下げると
+①そもそも聞き取れない(音の分解ができていない)、②集中が続かない(受け身で聞くだけで疲れる)
+の2つが根っこで、両方に効く共通の打ち手として以下を実装した(ディクテーション機能は見送り)。
+
+- **再生速度設定**(`state.settings.speedMultiplier`、既定1.0、設定ダイアログの`#speed-input`
+  レンジスライダー 0.7〜1.15倍): 全ての読み上げ・音声ファイル再生で
+  「実際のレート = そのコンテキストの基準レート × speedMultiplier」で統一。新設の`spd(rate)`ヘルパーが
+  この掛け算を担う。`speak()`/`speakAs()`の`u.rate`、`playAudioFile()`の`audio.playbackRate`に適用。
+  `playListenAudio()`/`playL34Audio()`など呼び出し側は変更不要(関数内部で自動的に反映される)。
+- **文単位リピート**: 答え合わせ後のスクリプト表示に「🔁」ボタンを追加
+  (`makeReplayBtn()`で生成、Part1/2は`answerListen()`内の`.script-line`、Part3/4は
+  `renderL34Script()`内の各`line`)。押すと`replayScriptLine()`が固定0.75倍速(`REPLAY_RATE`、
+  これも`speedMultiplier`とさらに掛け合わさる)でその1文だけを再生し直す。Part1は該当choiceの
+  音声ファイルを、それ以外はTTS(Part3/4は`speakAs(text, speaker, 0.75)`で話者の声も維持)を使う。
+  セッション中の`playToken`とは独立した`reviewPlayToken`で連打時の割り込みを制御している。
+- `speakAs()`に`rate`が明示指定された場合は、話者を聞き分けるための`SPEAKER_RATE_SAME_VOICE`
+  テーブルより優先されるよう変更(1文だけの復習再生では聞き分けより指定速度を優先すべきため)。
 
 ### 男女の声が両方とも同じに聞こえる問題(2026-07-29修正)
 

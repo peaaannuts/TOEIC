@@ -706,8 +706,9 @@ html, body {
   line-height: 1.6;
 }
 .script-line {
+  position: relative;
   margin: 6px 0;
-  padding: 8px 10px;
+  padding: 8px 40px 8px 10px;
   border-radius: 8px;
   font-size: 14px;
   line-height: 1.6;
@@ -716,6 +717,23 @@ html, body {
 .script-line.correct { background: var(--ok-light); }
 .script-line.wrong { background: var(--ng-light); }
 .script-q span, .script-line span { color: var(--sub); font-size: 12px; }
+
+.line-replay-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.line-replay-btn:active { transform: scale(0.92); }
+.line-replay-btn:disabled { opacity: 0.5; cursor: default; }
 
 .listen-warn { color: var(--ng); font-size: 12px; text-align: center; margin: 0 0 8px; }
 
@@ -861,6 +879,12 @@ dialog label.check-row input {
   width: 18px;
   height: 18px;
   margin: 0;
+  accent-color: var(--accent);
+}
+dialog input[type="range"] {
+  padding: 0;
+  border: none;
+  background: none;
   accent-color: var(--accent);
 }
 .dialog-actions {
