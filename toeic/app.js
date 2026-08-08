@@ -2015,7 +2015,9 @@ async function playListenAudio() {
   const item = listenData()[listenQueue[listenPos]];
   const audioDir = `audio/part${listenMode}/`;
   if (listenMode === 1) {
-    await speak("Look at the picture.");
+    const introOk = await playAudioFile("audio/common/look_at_the_picture.mp3", token, 1, () => playToken);
+    if (token !== playToken) return;
+    if (!introOk) await speak("Look at the picture.");
   } else {
     const qOk = item.qAudio && await playAudioFile(`${audioDir}${item.qAudio}`, token, 1, () => playToken);
     if (token !== playToken) return;
@@ -2026,7 +2028,9 @@ async function playListenAudio() {
   const labels = ["A", "B", "C", "D"];
   for (let i = 0; i < item.r.length; i++) {
     if (token !== playToken) return;
-    await speak(labels[i] + ".", 1.0);
+    const labelOk = await playAudioFile(`audio/common/label_${labels[i].toLowerCase()}.mp3`, token, 1, () => playToken);
+    if (token !== playToken) return;
+    if (!labelOk) await speak(labels[i] + ".", 1.0);
     if (token !== playToken) return;
     const orig = listenOrder[i];
     const audioFile = item.audio && item.audio[orig];

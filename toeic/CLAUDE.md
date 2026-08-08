@@ -488,8 +488,10 @@ Part3-4/Part6-7)で共通ヘルパー化**し、各ハンドラは1〜数行の�
 - **再生ロジック**: `playListenAudio()`(app.js)内、選択肢の読み上げ部分で`item.audio`があれば
   新設の`playAudioFile(src, token, rate, tokenGetter)`(`<audio>`要素で再生、`tokenGetter`で参照する
   トークンによる中断制御をspeak()と揃えている。`tokenGetter`省略時は割り込み無しの単発再生)
-  を使い、無ければ従来通り`speak()`(TTS)にフォールバックする。"Look at the picture."とA〜Dのラベル読みは
-  今回のスコープ外で従来通りTTSのまま。
+  を使い、無ければ従来通り`speak()`(TTS)にフォールバックする。当初は"Look at the picture."と
+  A〜Dのラベル読みがスコープ外で従来通りTTSのままだったが、2026-08-08に
+  `audio/common/look_at_the_picture.mp3`・`label_a〜d.mp3`(いずれも`en-US-GuyNeural`、
+  Part1/2共通でラベル読み上げに使い回す)を追加生成し、Part1の音声を完全にTTS非依存にした。
 - **PWAキャッシュ**: 導入当初は`sw.js`の`ASSETS`に`audio/part1/*.mp3`を全64件プリキャッシュしていたが、
   Part 2〜4展開(下記)に伴い**ランタイムキャッシュ方式に変更**したため、現在この個別列挙は無い。
 
