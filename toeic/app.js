@@ -2140,10 +2140,13 @@ function showListenQuestion() {
     `Part ${listenMode}　${listenPos + 1} / ${listenQueue.length}`;
   document.getElementById("listen-feedback").classList.add("hidden");
 
-  // Part 1はイラストを表示、Part 2では非表示
+  // Part 1はイラストを表示、Part 2では非表示。写真は事前生成した画像ファイルを優先し、
+  // 無ければ従来の簡易SVGイラストにフォールバックする(音声ファイルと同じパターン)。
   const photo = document.getElementById("listen-photo");
   if (listenMode === 1) {
-    photo.innerHTML = item.svg;
+    photo.innerHTML = item.img
+      ? `<img src="images/part1/${item.img}" alt="${item.t}" loading="lazy">`
+      : item.svg;
     photo.classList.remove("hidden");
   } else {
     photo.innerHTML = "";

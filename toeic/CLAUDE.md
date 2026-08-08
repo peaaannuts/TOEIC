@@ -634,6 +634,38 @@ iOSは**同じ声を品質違いで複数返す**(`Samantha` が2つ以上並ぶ
 - **教訓**: 音声名・カテゴリ名など「短い英単語を含む文字列」をパターンマッチする箇所では、
   必ず `\b` を付けること。この1文字の欠落で3回の修正を空振りさせた。
 
+### Part 1のイラストをComfyUI生成のリアルな写真に置き換え(2026-08-08追加)
+
+従来Part 1(写真描写、16問)のイラストは`data.js`にインライン直書きした簡易SVG(幾何学図形)
+だった。本番のTOEIC Part 1は実際の写真なので、より本番に近いリアルな画像にしたいという要望を受けた。
+
+- **生成手段**: ローカルのComfyUI(Desktop版、`C:\Users\<user>\AppData\Local\Comfy-Desktop\
+  ComfyUI-Installs\<workspace>\ComfyUI`に導入済みだったが未起動)。Higgsfield MCP(有料クレジット)
+  ではなく無料でできないか相談を受け、ComfyUI MCPで起動→GPU(RTX 3070, VRAM 8GB)を検出→
+  画像生成用チェックポイントが1つも無かったため`download_model`でSDXL Base
+  (`sd_xl_base_1.0.safetensors`、約6.5GB、HuggingFaceから)を導入。以降は完全無料・
+  ローカルGPUで生成できる。
+  - Desktop版ComfyUIは`restart_comfyui(action:"start")`では起動できず(直後にexit code 0で
+    終了)、`main.py --listen 127.0.0.1 --port 8188`を`.venv`のPythonで直接バックグラウンド
+    起動する必要があった。プロセスはこのエージェントセッションに紐づくため、セッションが
+    切れると一緒に落ちる(再開時は同じ手順で再起動が必要)。
+- **生成条件**: `generate_image(action:"image", checkpoint:"sd_xl_base_1.0.safetensors")`、
+  1024×640(既存SVGのviewBox 320×200と同じ8:5に近い比率)、30ステップ。プロンプトは
+  「Documentary-style realistic photograph, TOEIC listening test photo style」を接頭辞に、
+  各問題の正解文(`r[0]`)から場面を英語で記述する形で統一。ネガティブプロンプトで
+  イラスト調・崩れた手・透かし文字などを除外。1枚あたり約10〜20秒。
+- **データ**: `data.js`の`PART1`各要素に`img: "q{番号}.jpg"`を追加(既存の`svg`は
+  フォールバック用にそのまま残している)。
+- **再生ロジック**: `showListenQuestion()`(app.js)で`item.img`があれば
+  `<img src="images/part1/${item.img}">`を、無ければ従来の`item.svg`をそのまま使う
+  (音声ファイル対応と同じ「ファイル優先・フォールバックあり」のパターン)。
+  `style.css`の`.listen-photo`に`img`用のルールを追加(`svg`と共通のwidth:100%)。
+- **PWAキャッシュ**: `sw.js`の音声用ランタイムキャッシュ条件に`/images/`も追加し、
+  同じ遅延キャッシュ方式(初回表示時にキャッシュへ保存)を流用。`CACHE_NAME`を`v51`に。
+- **今後**: 生成した16枚の画質・本番との近さはユーザー自身に確認してもらう必要がある
+  (本エージェントは画像を目視評価できないため)。気に入らない場合はプロンプト調整して
+  一部だけ再生成、またはSVGへ差し戻しが可能。
+
 ## プレビュー検証で踏んだ地雷(次回も起きうる)
 
 - **Service Workerキャッシュ**: `data.js`/`app.js` を編集したら `sw.js` の `CACHE_NAME` を必ずインクリメント

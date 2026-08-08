@@ -647,7 +647,8 @@ html, body {
   overflow: hidden;
   border: 1px solid #dde6ea;
 }
-.listen-photo svg {
+.listen-photo svg,
+.listen-photo img {
   display: block;
   width: 100%;
   height: auto;
