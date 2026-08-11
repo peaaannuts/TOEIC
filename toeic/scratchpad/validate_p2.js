@@ -1,6 +1,6 @@
 // PART2 追加分の構造・品質検証
 const fs = require("fs");
-let src = fs.readFileSync("/home/user/TOEIC/toeic/data.js", "utf8");
+let src = fs.readFileSync("" + __dirname + "/../data.js", "utf8");
 eval(src.replace(/const (WORDS|IPA|QUESTIONS|PART2|PART1|READING|PART6|PART3|PART4)/g, "globalThis.$1"));
 
 let bad = 0;

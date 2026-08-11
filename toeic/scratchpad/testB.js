@@ -13,7 +13,7 @@ const results=[];
 function check(name,cond,detail){results.push({name,pass:!!cond,detail});console.log(`${cond?'PASS':'FAIL'}  ${name}${detail?'  — '+detail:''}`);}
 
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium',args:['--no-sandbox']});
+  const b=await chromium.launch({args:['--no-sandbox']});
   const p=await b.newPage();
   const errors=[];
   p.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
