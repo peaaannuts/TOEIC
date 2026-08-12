@@ -30,7 +30,7 @@
 ```
 for f in smoke testB phase1check phase2check phase3check l34check fullflow uicheck \
          designcheck validate_p2 verify_p67 verify_p67_v2 verify_words_grammar \
-         voicegender voiceui titlecheck; do
+         voicegender voiceui titlecheck verify_part1_add20 grammar_tips_check; do
   echo "=== $f ==="; node "$f.js"
 done
 ```

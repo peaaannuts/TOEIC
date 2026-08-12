@@ -1636,6 +1636,32 @@ function quizDueAndNewCounts() {
   return { due, fresh };
 }
 
+const WEAK_TYPE_MIN_SEEN = 5; // 最低出題数(サンプル不足での誤判定を防ぐ)
+const WEAK_TYPE_ACC_THRESHOLD = 0.7; // これ未満の正答率を「弱点」とみなす
+
+// 文法カテゴリ(QUESTIONSのtフィールド)別の出題数・正解数を集計する。
+// 記録タブの「文法クイズの定着度」カードとweakGrammarTypes()の両方から使う共通ロジック。
+function grammarTypeStats() {
+  const byType = {};
+  QUESTIONS.forEach((q, i) => {
+    const st = state.quizStats[i];
+    if (!st || st.seen === 0) return;
+    if (!byType[q.t]) byType[q.t] = { seen: 0, ok: 0 };
+    byType[q.t].seen += st.seen;
+    byType[q.t].ok += st.ok;
+  });
+  return byType;
+}
+
+// 正答率が閾値未満の文法カテゴリを、正答率の低い順に返す(苦手カテゴリの検出)。
+function weakGrammarTypes() {
+  const byType = grammarTypeStats();
+  return Object.entries(byType)
+    .filter(([, s]) => s.seen >= WEAK_TYPE_MIN_SEEN && s.ok / s.seen < WEAK_TYPE_ACC_THRESHOLD)
+    .map(([type, s]) => ({ type, seen: s.seen, ok: s.ok, pct: Math.round((s.ok / s.seen) * 100) }))
+    .sort((a, b) => a.pct - b.pct);
+}
+
 function renderQuizStart() {
   document.getElementById("quiz-start").classList.remove("hidden");
   document.getElementById("quiz-session").classList.add("hidden");
@@ -1702,6 +1728,9 @@ function answerQuestion(chosen, btn, timedOut) {
   const qi = quizQueue[quizPos];
   const q = QUESTIONS[qi];
   const correct = chosen === q.a;
+  // 今回の解答結果をSRSへ反映する前の時点で苦手カテゴリだったかを覚えておく
+  // (1問の結果だけで解説パネルの表示がぶれないようにするため)
+  const wasWeakType = weakGrammarTypes().some((w) => w.type === q.t);
   if (correct) {
     quizCombo++;
     seCorrect(quizCombo);
@@ -1760,6 +1789,16 @@ function answerQuestion(chosen, btn, timedOut) {
     script.appendChild(qLine);
   }
   document.getElementById("quiz-explanation").textContent = q.x;
+
+  // この問題のカテゴリが(この解答結果を反映する前の時点で)苦手分野なら、詳しい解説を追加表示する
+  const weakTipBox = document.getElementById("quiz-weak-tip");
+  if (wasWeakType && GRAMMAR_TIPS[q.t]) {
+    document.getElementById("quiz-weak-tip-body").textContent = GRAMMAR_TIPS[q.t];
+    weakTipBox.classList.remove("hidden");
+  } else {
+    weakTipBox.classList.add("hidden");
+  }
+
   const nextBtn = document.getElementById("quiz-next-btn");
   nextBtn.textContent = quizPos + 1 < quizQueue.length ? "次の問題へ" : "結果を見る";
   document.getElementById("quiz-feedback").classList.remove("hidden");
@@ -1954,6 +1993,14 @@ function wait(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// 再生開始前後の人工的な"間"。自然な会話・朗読のポーズ(発話ターン間は概ね200〜500ms)を
+// 目安にチューニングしてある。速すぎる/遅すぎる場合はここだけ調整すればよい。
+const SAFETY_WAIT = 100;       // 直前の再生キャンセルが確実に効くための最小マージン
+const PRE_CHOICE_WAIT = 450;   // Part1/2: 質問/前置き音声の後、選択肢に入る前の間
+const BETWEEN_CHOICE_WAIT = 350; // Part1/2: 各選択肢の間
+const POST_NARRATOR_WAIT = 400;  // Part3/4: ナレーター導入の後、本編に入る前の間
+const BETWEEN_LINE_WAIT = 300;   // Part3/4: 各セリフの間
+
 // 事前生成した音声ファイル(端末のTTSに依存しない)を再生する。playTokenでの
 // 割り込み制御はspeak()と揃える。再生失敗時はnullを返し、呼び出し側でTTSにフォールバックする。
 // tokenGetter省略時は「割り込みなし(常に最後まで再生)」として扱う(答え合わせ画面の単発再生用)。
@@ -2010,7 +2057,7 @@ async function playListenAudio() {
   audioStarted = true;
   const token = ++playToken;
   speechSynthesis.cancel();
-  await wait(200);
+  await wait(SAFETY_WAIT);
   if (token !== playToken) return;
   const item = listenData()[listenQueue[listenPos]];
   const audioDir = `audio/part${listenMode}/`;
@@ -2024,7 +2071,7 @@ async function playListenAudio() {
     if (!qOk) await speak(item.q);
   }
   if (token !== playToken) return;
-  await wait(700);
+  await wait(PRE_CHOICE_WAIT);
   const labels = ["A", "B", "C", "D"];
   for (let i = 0; i < item.r.length; i++) {
     if (token !== playToken) return;
@@ -2038,7 +2085,7 @@ async function playListenAudio() {
     if (token !== playToken) return;
     if (!ok) await speak(item.r[orig]);
     if (token !== playToken) return;
-    await wait(500);
+    await wait(BETWEEN_CHOICE_WAIT);
   }
 }
 
@@ -2366,7 +2413,7 @@ async function playL34Audio() {
   audioStarted = true;
   const token = ++playToken;
   speechSynthesis.cancel();
-  await wait(200);
+  await wait(SAFETY_WAIT);
   if (token !== playToken) return;
   const set = currentL34Set();
   const audioDir = `audio/part${l34Section}/`;
@@ -2376,14 +2423,14 @@ async function playL34Audio() {
     await speakAs(l34Section === 3 ? "Listen to the following conversation." : "Listen to the following talk.", "N", 1.0);
     if (token !== playToken) return;
   }
-  await wait(500);
+  await wait(POST_NARRATOR_WAIT);
   for (const line of set.lines) {
     if (token !== playToken) return;
     const ok = line.audio && await playAudioFile(`${audioDir}${line.audio}`, token, 1, () => playToken);
     if (token !== playToken) return;
     if (!ok) await speakAs(line.text, line.s);
     if (token !== playToken) return;
-    await wait(320);
+    await wait(BETWEEN_LINE_WAIT);
   }
 }
 
@@ -3029,17 +3076,12 @@ function renderStats() {
   });
 
   // 正答率(全体・タイプ別)
-  const byType = {};
+  const byType = grammarTypeStats();
   let totalSeen = 0;
   let totalOk = 0;
-  QUESTIONS.forEach((q, i) => {
-    const st = state.quizStats[i];
-    if (!st || st.seen === 0) return;
-    totalSeen += st.seen;
-    totalOk += st.ok;
-    if (!byType[q.t]) byType[q.t] = { seen: 0, ok: 0 };
-    byType[q.t].seen += st.seen;
-    byType[q.t].ok += st.ok;
+  Object.values(byType).forEach((s) => {
+    totalSeen += s.seen;
+    totalOk += s.ok;
   });
   document.getElementById("accuracy-total").textContent =
     totalSeen > 0 ? `全体: ${Math.round((totalOk / totalSeen) * 100)}%(${totalSeen}問解答)` : "まだクイズを解いていません";
@@ -3207,6 +3249,25 @@ function renderStats() {
       row.className = "weak-word-row";
       row.innerHTML = `<span class="weak-w">${w.w}</span><span class="weak-m">${w.m}</span>`;
       weakBox.appendChild(row);
+    });
+  }
+
+  // 苦手な文法分野(正答率が閾値未満のカテゴリ)
+  const weakTypes = weakGrammarTypes();
+  const weakGrammarBox = document.getElementById("weak-grammar");
+  weakGrammarBox.innerHTML = "";
+  if (weakTypes.length === 0) {
+    weakGrammarBox.innerHTML = `<p class="empty-note">苦手な文法分野はまだありません</p>`;
+  } else {
+    weakTypes.forEach((w) => {
+      const tip = GRAMMAR_TIPS[w.type] || "";
+      const snippet = tip.length > 60 ? `${tip.slice(0, 60)}…` : tip;
+      const row = document.createElement("div");
+      row.className = "weak-grammar-row";
+      row.innerHTML =
+        `<div class="weak-grammar-head"><span class="weak-w">${w.type}</span><span class="weak-m">${w.pct}%(${w.ok}/${w.seen}問)</span></div>` +
+        (snippet ? `<p class="weak-grammar-tip">${snippet}</p>` : "");
+      weakGrammarBox.appendChild(row);
     });
   }
 }

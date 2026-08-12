@@ -840,6 +840,13 @@ html, body {
 .weak-m { color: var(--sub); font-size: 13px; text-align: right; }
 .empty-note { color: var(--sub); font-size: 13px; text-align: center; padding: 10px 0; }
 
+.weak-grammar-row { padding: 8px 0; border-bottom: 1px solid #eef3f5; }
+.weak-grammar-row:last-child { border-bottom: none; }
+.weak-grammar-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.weak-grammar-tip { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--sub); }
+
+.weak-tip-box { margin-top: 8px; }
+
 /* ---- ダイアログ ---- */
 dialog {
   border: none;
