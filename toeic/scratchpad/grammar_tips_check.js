@@ -65,6 +65,9 @@ function check(name, cond, detail) {
   check('記録タブの#weak-grammarに品詞の行が描画される', statsCard.text.includes('品詞'), statsCard.text.slice(0, 200));
   check('記録タブの#weak-grammarに語彙の行は描画されない', !statsCard.text.includes('語彙'), statsCard.text.slice(0, 200));
   check('#weak-grammarの行数が弱点カテゴリ数と一致', statsCard.rowCount === weakResult.length, `rowCount=${statsCard.rowCount} expected=${weakResult.length}`);
+  // 途中で文が千切れる60文字要約ではなく、GRAMMAR_TIPSの全文がそのまま表示されることを確認(2026-08-17修正の回帰防止)
+  const fullTipCheck = await page.evaluate(() => document.getElementById('weak-grammar').textContent.includes(GRAMMAR_TIPS['品詞']));
+  check('#weak-grammarに品詞のGRAMMAR_TIPSが省略されず全文表示される', fullTipCheck);
 
   // 0件時のメッセージ確認
   await page.evaluate(() => { state.quizStats = {}; saveState(); renderStats(); });

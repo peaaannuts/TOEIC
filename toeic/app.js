@@ -3260,13 +3260,13 @@ function renderStats() {
     weakGrammarBox.innerHTML = `<p class="empty-note">苦手な文法分野はまだありません</p>`;
   } else {
     weakTypes.forEach((w) => {
+      // 60文字で機械的に切ると文の途中で千切れて読みにくいため、要約せず全文を表示する
       const tip = GRAMMAR_TIPS[w.type] || "";
-      const snippet = tip.length > 60 ? `${tip.slice(0, 60)}…` : tip;
       const row = document.createElement("div");
       row.className = "weak-grammar-row";
       row.innerHTML =
         `<div class="weak-grammar-head"><span class="weak-w">${w.type}</span><span class="weak-m">${w.pct}%(${w.ok}/${w.seen}問)</span></div>` +
-        (snippet ? `<p class="weak-grammar-tip">${snippet}</p>` : "");
+        (tip ? `<p class="weak-grammar-tip">${tip}</p>` : "");
       weakGrammarBox.appendChild(row);
     });
   }
