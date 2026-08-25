@@ -25,17 +25,14 @@ function check(name, cond, detail) {
     return { total: QUESTIONS.length, byType };
   });
   check('QUESTIONSが500問になっている', counts.total === 500, JSON.stringify(counts.byType));
-  // 2026-08-25にさらに+50問追加されたため、このラウンド時点の内訳(450問時点)ではなく
-  // 現在の内訳に対して「このラウンドで追加した各カテゴリの最小件数を満たしているか」を確認する
-  // (以前の厳密な完全一致チェックは、後続ラウンドでの増加により恒久的に失敗するため成立しなくなった)。
-  const minExpected = { 品詞: 95, 動詞の形: 73, 語彙: 70, 前置詞: 50, 接続詞: 46, 代名詞: 31, 仮定法: 26, 分詞構文: 19, 倒置: 19, 関係詞: 12, 比較: 9 };
-  check('カテゴリ内訳がこのラウンド追加時点の水準以上を維持している', Object.keys(minExpected).every((k) => counts.byType[k] >= minExpected[k]), JSON.stringify(counts.byType));
+  const expected = { 品詞: 106, 動詞の形: 81, 語彙: 78, 前置詞: 56, 接続詞: 51, 代名詞: 34, 仮定法: 29, 分詞構文: 21, 倒置: 21, 関係詞: 13, 比較: 10 };
+  check('カテゴリ内訳が想定通り', Object.keys(expected).every((k) => counts.byType[k] === expected[k]), JSON.stringify(counts.byType));
 
-  // 2. スキーマ・新規100問(index350-449)の構造確認
+  // 2. スキーマ・新規50問(index450-499)の構造確認
   const schemaCheck = await page.evaluate(() => {
     const VALID_CATS = new Set(['品詞', '動詞の形', '語彙', '前置詞', '接続詞', '代名詞', '仮定法', '分詞構文', '倒置', '関係詞', '比較']);
     let errs = [];
-    for (let i = 350; i < 450; i++) {
+    for (let i = 450; i < 500; i++) {
       const q = QUESTIONS[i];
       if (!q.q || !q.jq || !Array.isArray(q.c) || q.c.length !== 4 || !(q.a >= 0 && q.a <= 3) || !q.x || !VALID_CATS.has(q.t)) {
         errs.push(i);
@@ -44,22 +41,35 @@ function check(name, cond, detail) {
     }
     return errs;
   });
-  check('新規100問(index350-449)のスキーマが正しい', schemaCheck.length === 0, JSON.stringify(schemaCheck));
+  check('新規50問(index450-499)のスキーマが正しい', schemaCheck.length === 0, JSON.stringify(schemaCheck));
+
+  // 2b. 英問題文の完全一致重複チェック(全500問。過去のPart5追加スクリプトには無かった観点)
+  const dupCheck = await page.evaluate(() => {
+    const seen = new Map();
+    const dups = [];
+    QUESTIONS.forEach((q, i) => {
+      const k = q.q.trim().toLowerCase();
+      if (seen.has(k)) dups.push({ i, dupOf: seen.get(k), q: q.q });
+      else seen.set(k, i);
+    });
+    return dups;
+  });
+  check('QUESTIONS全500問に英文の完全一致重複がない', dupCheck.length === 0, JSON.stringify(dupCheck));
 
   // 3. 新規問題が出題キューに乗ることを確認(疑似SRSデータ投入)
   const queueCheck = await page.evaluate(() => {
     const today = todayKey();
-    for (let i = 0; i < 350; i++) state.quizStats[i] = { lv: 4, next: addDays(today, 30), seen: 4, ok: 4 };
-    for (let i = 350; i < 450; i++) state.quizStats[i] = { lv: 0, next: today, seen: 1, ok: 0 };
+    for (let i = 0; i < 450; i++) state.quizStats[i] = { lv: 4, next: addDays(today, 30), seen: 4, ok: 4 };
+    for (let i = 450; i < 500; i++) state.quizStats[i] = { lv: 0, next: today, seen: 1, ok: 0 };
     saveState();
     const queue = buildQuizQueue();
-    return queue.filter((i) => i >= 350).length;
+    return queue.filter((i) => i >= 450).length;
   });
-  check('新規100問が出題キューに正しく乗る(buildQuizQueueで拾われる)', queueCheck > 0, `count=${queueCheck}`);
+  check('新規50問が出題キューに正しく乗る(buildQuizQueueで拾われる)', queueCheck > 0, `count=${queueCheck}`);
 
   // 4. 新規問題を画面表示・解答完走
   await page.evaluate(() => {
-    quizQueue = [350, 360, 370, 380, 390, 400, 410, 420, 430, 440];
+    quizQueue = [450, 458, 466, 474, 482, 490, 498];
     quizPos = 0;
     quizCorrect = 0;
     quizCombo = 0;
@@ -84,13 +94,13 @@ function check(name, cond, detail) {
     await page.waitForTimeout(60);
   }
   const sessionDone = await page.evaluate(() => !document.getElementById('quiz-result').classList.contains('hidden'));
-  check('新規100問を含むセッションが完走する', sessionDone, `clicks=${completedClicks}`);
+  check('新規50問を含むセッションが完走する', sessionDone, `clicks=${completedClicks}`);
 
-  // 5. 記録タブでカテゴリ別正答率・苦手分野カードが正しく機能する(前回機能の回帰)
+  // 5. 記録タブでカテゴリ別正答率・苦手分野カードが正しく機能する(前回機能の回帰、比較カテゴリで確認)
   await page.evaluate(() => {
     state.quizStats = {};
     let n = 0;
-    QUESTIONS.forEach((q, i) => { if (q.t === '関係詞' && n < 12) { state.quizStats[i] = { lv: 0, next: todayKey(), seen: 2, ok: 0 }; n++; } });
+    QUESTIONS.forEach((q, i) => { if (q.t === '比較' && n < 6) { state.quizStats[i] = { lv: 0, next: todayKey(), seen: 2, ok: 0 }; n++; } });
     saveState();
     showTab('stats');
   });
@@ -99,8 +109,8 @@ function check(name, cond, detail) {
     accuracyListText: document.getElementById('accuracy-list').textContent,
     weakGrammarText: document.getElementById('weak-grammar').textContent,
   }));
-  check('新カテゴリ内訳後も#accuracy-listに関係詞が表示される', statsCheck.accuracyListText.includes('関係詞'), statsCheck.accuracyListText.slice(0, 150));
-  check('新カテゴリ内訳後も#weak-grammarに関係詞(0%)が弱点表示される', statsCheck.weakGrammarText.includes('関係詞') && statsCheck.weakGrammarText.includes('0%'), statsCheck.weakGrammarText.slice(0, 150));
+  check('新規問題を含む比較カテゴリが#accuracy-listに表示される', statsCheck.accuracyListText.includes('比較'), statsCheck.accuracyListText.slice(0, 150));
+  check('新規問題を含む比較カテゴリが#weak-grammarに弱点(0%)として表示される', statsCheck.weakGrammarText.includes('比較') && statsCheck.weakGrammarText.includes('0%'), statsCheck.weakGrammarText.slice(0, 150));
 
   console.log('\n=== コンソールエラー ===');
   console.log(errors.length === 0 ? 'なし' : errors.join('\n'));

@@ -59,12 +59,14 @@ function check(name, cond, detail) {
   check('全ノルマ未達成なし想定でCTAが読解を指す(単語欠のみ想定外にならないか確認用ログ)', true, JSON.stringify(ctaInfo1));
 
   // 単語だけ未達成にして確認
-  await page.evaluate((s) => {
+  // 日付キーはアプリの todayKey()(ローカル日付基準)に合わせて Node側の dk(0) を渡す。
+  // toISOString()(UTC基準)だとローカル日付と一致しない時間帯があり、アプリが見る「今日」と
+  // ズレて意図しない日付のログを書き込んでしまうため(2026-08-26に発覚・修正)。
+  await page.evaluate((today) => {
     const st = JSON.parse(localStorage.getItem('toeic600-v1'));
-    const today = new Date().toISOString().slice(0, 10);
     st.log[today] = { words: 3, quiz: 10, correct: 8, listen: 10, listenOk: 8, read: 6, readOk: 5 };
     localStorage.setItem('toeic600-v1', JSON.stringify(st));
-  });
+  }, dk(0));
   await page.reload();
   await page.waitForTimeout(300);
   const ctaWords = await page.evaluate(() => ({
@@ -78,12 +80,11 @@ function check(name, cond, detail) {
   await page.evaluate(() => showTab('home'));
 
   // 読解だけ未達成にして確認
-  await page.evaluate(() => {
+  await page.evaluate((today) => {
     const st = JSON.parse(localStorage.getItem('toeic600-v1'));
-    const today = new Date().toISOString().slice(0, 10);
     st.log[today] = { words: 20, quiz: 10, correct: 8, listen: 10, listenOk: 8, read: 1, readOk: 1 };
     localStorage.setItem('toeic600-v1', JSON.stringify(st));
-  });
+  }, dk(0));
   await page.reload();
   await page.waitForTimeout(300);
   const ctaRead = await page.evaluate(() => ({
