@@ -28,6 +28,16 @@ PART2.forEach((q, i) => {
   if (s.size !== 3) { bad++; console.log("duplicate response text @", i, q.q); }
 });
 
+// 音声ファイルの実在チェック(qAudio/audioを持つ全問。2026-08-26にPart2の66問追加時に新設した観点)
+const path = require("path");
+const AUDIO_DIR = path.join(__dirname, "..", "audio", "part2");
+PART2.forEach((q, i) => {
+  if (q.qAudio && !fs.existsSync(path.join(AUDIO_DIR, q.qAudio))) { bad++; console.log("missing audio file @", i, q.qAudio); }
+  if (Array.isArray(q.audio)) {
+    q.audio.forEach((f) => { if (!fs.existsSync(path.join(AUDIO_DIR, f))) { bad++; console.log("missing audio file @", i, f); } });
+  }
+});
+
 const t = {};
 PART2.forEach((q) => { t[q.t] = (t[q.t] || 0) + 1; });
 
