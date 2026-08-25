@@ -25,8 +25,8 @@ function check(name, cond, detail) {
     reading: READING.length,
     readingQ: READING.reduce((s, p) => s + p.qs.length, 0),
   }));
-  check('PART6が12長文・48問になっている', dataCounts.part6 === 12 && dataCounts.part6Q === 48, JSON.stringify(dataCounts));
-  check('READINGが19セット・68問になっている', dataCounts.reading === 19 && dataCounts.readingQ === 68, JSON.stringify(dataCounts));
+  check('PART6が25長文・100問になっている', dataCounts.part6 === 25 && dataCounts.part6Q === 100, JSON.stringify(dataCounts));
+  check('READINGが32セット・118問になっている', dataCounts.reading === 32 && dataCounts.readingQ === 118, JSON.stringify(dataCounts));
 
   // ---- Part 6を最後まで解いてSRS更新を確認 ----
   await page.click('[data-tab="read"]');
