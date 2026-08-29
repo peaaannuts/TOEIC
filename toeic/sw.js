@@ -1,4 +1,4 @@
-const CACHE_NAME = "toeic600-v60";
+const CACHE_NAME = "toeic600-v61";
 const ASSETS = [
   ".",
   "index.html",

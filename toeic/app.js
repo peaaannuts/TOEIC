@@ -2001,6 +2001,16 @@ const BETWEEN_CHOICE_WAIT = 350; // Part1/2: 各選択肢の間
 const POST_NARRATOR_WAIT = 400;  // Part3/4: ナレーター導入の後、本編に入る前の間
 const BETWEEN_LINE_WAIT = 300;   // Part3/4: 各セリフの間
 
+// このセットで使う音声ファイルを再生開始前にまとめて並列取得しておく(sw.jsのランタイム
+// キャッシュに前倒しで乗せる)。playAudioFile()は再生する瞬間までnew Audio()を作らないため、
+// 何もしないと「wait()で意図した間」に加えて毎ターンのfetch+デコード待ちが積み重なり、
+// 特に初見の会話(Part3/4は1セットで6〜10ファイル)や低速回線で間が不揃いに長くなる。
+// 失敗(404等)は無視してよい。呼び出し側は既存通りTTSにフォールバックする。
+function prefetchAudio(src) {
+  if (!src) return;
+  fetch(src).catch(() => {});
+}
+
 // 事前生成した音声ファイル(端末のTTSに依存しない)を再生する。playTokenでの
 // 割り込み制御はspeak()と揃える。再生失敗時はnullを返し、呼び出し側でTTSにフォールバックする。
 // tokenGetter省略時は「割り込みなし(常に最後まで再生)」として扱う(答え合わせ画面の単発再生用)。
@@ -2057,10 +2067,20 @@ async function playListenAudio() {
   audioStarted = true;
   const token = ++playToken;
   speechSynthesis.cancel();
-  await wait(SAFETY_WAIT);
-  if (token !== playToken) return;
   const item = listenData()[listenQueue[listenPos]];
   const audioDir = `audio/part${listenMode}/`;
+  // 質問+選択肢+ラベルの全ファイルを、再生順を待たずここで並列に先読みしておく
+  if (listenMode === 1) {
+    prefetchAudio("audio/common/look_at_the_picture.mp3");
+  } else {
+    if (item.qAudio) prefetchAudio(`${audioDir}${item.qAudio}`);
+  }
+  for (let i = 0; i < item.r.length; i++) {
+    prefetchAudio(`audio/common/label_${["a", "b", "c", "d"][i]}.mp3`);
+    if (item.audio && item.audio[i]) prefetchAudio(`${audioDir}${item.audio[i]}`);
+  }
+  await wait(SAFETY_WAIT);
+  if (token !== playToken) return;
   if (listenMode === 1) {
     const introOk = await playAudioFile("audio/common/look_at_the_picture.mp3", token, 1, () => playToken);
     if (token !== playToken) return;
@@ -2413,10 +2433,13 @@ async function playL34Audio() {
   audioStarted = true;
   const token = ++playToken;
   speechSynthesis.cancel();
-  await wait(SAFETY_WAIT);
-  if (token !== playToken) return;
   const set = currentL34Set();
   const audioDir = `audio/part${l34Section}/`;
+  // ナレーター+全セリフを、再生順を待たずここで並列に先読みしておく
+  prefetchAudio(`${audioDir}narrator.mp3`);
+  set.lines.forEach((line) => { if (line.audio) prefetchAudio(`${audioDir}${line.audio}`); });
+  await wait(SAFETY_WAIT);
+  if (token !== playToken) return;
   const narratorOk = await playAudioFile(`${audioDir}narrator.mp3`, token, 1, () => playToken);
   if (token !== playToken) return;
   if (!narratorOk) {
