@@ -23,10 +23,10 @@ function check(name, cond, detail) {
     ipa: Object.keys(IPA).length,
     questions: QUESTIONS.length,
   }));
-  // WORDS/IPAは単語追加の別作業で362→700→1000語に増えており、QUESTIONSはその後450→500問に増えたため、
-  // 件数アサーションは現状の規模に合わせて更新している(2026-09-02)。
-  check('WORDSが1000語になっている', counts.words === 1000, JSON.stringify(counts));
-  check('IPAが1000件になっている', counts.ipa === 1000, JSON.stringify(counts));
+  // WORDS/IPAは単語追加の別作業で362→700→1000→1100語に増えており、QUESTIONSはその後450→500問に増えたため、
+  // 件数アサーションは現状の規模に合わせて更新している(2026-09-02、熟語100語追加分)。
+  check('WORDSが1100語になっている', counts.words === 1100, JSON.stringify(counts));
+  check('IPAが1100件になっている', counts.ipa === 1100, JSON.stringify(counts));
   check('QUESTIONSが500問になっている', counts.questions === 500, JSON.stringify(counts));
 
   // ---- 単語カードを完走してSRS登録を確認 ----
