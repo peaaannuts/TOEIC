@@ -27,7 +27,7 @@ function check(name, cond, detail) {
   // 件数アサーションは現状の規模に合わせて更新している(2026-09-02、熟語100語追加分)。
   check('WORDSが1100語になっている', counts.words === 1100, JSON.stringify(counts));
   check('IPAが1100件になっている', counts.ipa === 1100, JSON.stringify(counts));
-  check('QUESTIONSが500問になっている', counts.questions === 500, JSON.stringify(counts));
+  check('QUESTIONSが575問になっている', counts.questions === 575, JSON.stringify(counts));
 
   // ---- 単語カードを完走してSRS登録を確認 ----
   await page.click('[data-tab="words"]');

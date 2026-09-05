@@ -24,7 +24,7 @@ function check(name, cond, detail) {
     QUESTIONS.forEach((q) => { byType[q.t] = (byType[q.t] || 0) + 1; });
     return { total: QUESTIONS.length, byType };
   });
-  check('QUESTIONSが500問になっている', counts.total === 500, JSON.stringify(counts.byType));
+  check('QUESTIONSが500問以上になっている(以降のラウンドで増加するため下限チェック)', counts.total >= 500, JSON.stringify(counts.byType));
   // 2026-08-25にさらに+50問追加されたため、このラウンド時点の内訳(450問時点)ではなく
   // 現在の内訳に対して「このラウンドで追加した各カテゴリの最小件数を満たしているか」を確認する
   // (以前の厳密な完全一致チェックは、後続ラウンドでの増加により恒久的に失敗するため成立しなくなった)。
