@@ -1285,29 +1285,59 @@ let wordQueue = [];
 let wordPos = 0;
 let sessionOk = 0;
 
+// 単語の難易度別・段階的アンロック(基礎→標準→上級)
+// 上位Tierの「未出語」は、下位Tierの習得率(SRSレベルlv>=2=定着中以上)が80%に達するまで
+// 新規に出題キューへ入れない。一度アンロックしたら忘却で比率が下がっても再ロックはしない。
+// 既にSRS記録がある語(復習対象)はTierに関係なく常に出題する(ロックは新規導入のみに作用)。
+const TIER_UNLOCK_RATIO = 0.8;
+
+function tierMasteryRatio(tier) {
+  let total = 0;
+  let mastered = 0;
+  WORDS.forEach((w, i) => {
+    if (w.tier !== tier) return;
+    total++;
+    if (state.words[i] && state.words[i].lv >= 2) mastered++;
+  });
+  return total === 0 ? 1 : mastered / total;
+}
+
+function unlockedWordTierMax() {
+  if (!state.wordTierUnlocked) state.wordTierUnlocked = { 2: false, 3: false };
+  const u = state.wordTierUnlocked;
+  if (!u[2] && tierMasteryRatio(1) >= TIER_UNLOCK_RATIO) u[2] = true;
+  if (u[2] && !u[3] && tierMasteryRatio(2) >= TIER_UNLOCK_RATIO) u[3] = true;
+  return u[3] ? 3 : u[2] ? 2 : 1;
+}
+
 function dueAndNewCounts() {
   const today = todayKey();
+  const maxTier = unlockedWordTierMax();
   let due = 0;
   let seen = 0;
-  WORDS.forEach((_, i) => {
+  let fresh = 0;
+  WORDS.forEach((w, i) => {
     const st = state.words[i];
     if (st) {
       seen++;
       if (st.next <= today) due++;
+    } else if (w.tier <= maxTier) {
+      fresh++;
     }
   });
-  return { due, fresh: WORDS.length - seen };
+  return { due, fresh };
 }
 
 function buildWordQueue() {
   const today = todayKey();
+  const maxTier = unlockedWordTierMax();
   const due = [];
   const fresh = [];
-  WORDS.forEach((_, i) => {
+  WORDS.forEach((w, i) => {
     const st = state.words[i];
     if (st) {
       if (st.next <= today) due.push(i);
-    } else {
+    } else if (w.tier <= maxTier) {
       fresh.push(i);
     }
   });
@@ -1389,6 +1419,26 @@ function renderForecast(containerId, statsList) {
   });
 }
 
+function tierLabel(tier) {
+  return tier === 1 ? "基礎" : tier === 2 ? "標準" : "上級";
+}
+
+// 単語開始画面に、難易度Tierのアンロック進捗を表示する
+function renderWordTierStatus() {
+  const el = document.getElementById("words-tier-status");
+  if (!el) return;
+  const maxTier = unlockedWordTierMax();
+  const pct = (t) => Math.round(tierMasteryRatio(t) * 100);
+  const threshold = Math.round(TIER_UNLOCK_RATIO * 100);
+  if (maxTier === 1) {
+    el.innerHTML = `🔓 基礎語彙 習得度 ${pct(1)}%(標準語彙の解放には${threshold}%必要)<br>🔒 上級語彙は標準語彙の解放後に解放されます`;
+  } else if (maxTier === 2) {
+    el.innerHTML = `✅ 基礎語彙 習得済み<br>🔓 標準語彙 習得度 ${pct(2)}%(上級語彙の解放には${threshold}%必要)`;
+  } else {
+    el.innerHTML = `🎉 基礎・標準語彙とも習得済み。上級語彙まですべて解放されています`;
+  }
+}
+
 function renderWordsStart() {
   document.getElementById("words-start").classList.remove("hidden");
   document.getElementById("words-session").classList.add("hidden");
@@ -1399,6 +1449,7 @@ function renderWordsStart() {
   const c = retentionCounts();
   renderRetentionBar("words-retention-bar", c, WORDS.length);
   document.getElementById("words-retention-text").textContent = retentionText(c);
+  renderWordTierStatus();
 }
 
 // 単語の読み上げ(リスニングと同じ音声合成を利用)
@@ -1449,6 +1500,9 @@ function showCard() {
   document.getElementById("fc-ipa").textContent = ipa;
   document.getElementById("fc-ipa-back").textContent = ipa;
   document.getElementById("fc-pos").textContent = `[${w.p}]`;
+  const tierBadge = document.getElementById("fc-tier-badge");
+  tierBadge.textContent = tierLabel(w.tier);
+  tierBadge.className = `fc-tier-badge tier-${w.tier}`;
   document.getElementById("fc-word-back").textContent = w.w;
   document.getElementById("fc-meaning").textContent = w.m;
   document.getElementById("fc-example").textContent = w.e;

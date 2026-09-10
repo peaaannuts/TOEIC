@@ -437,6 +437,7 @@ html, body {
 .words-summary { margin: 0 0 6px; font-size: 14px; line-height: 1.8; text-align: center; }
 
 .flashcard {
+  position: relative;
   background: var(--card);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
@@ -514,6 +515,31 @@ html, body {
   color: var(--sub);
   text-align: center;
 }
+
+/* ---- 単語の難易度Tier(段階的アンロック) ---- */
+.tier-status {
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  border-radius: var(--r-md, 10px);
+  background: var(--accent-light);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--sub);
+  text-align: center;
+}
+.fc-tier-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill, 999px);
+  font: 700 11px var(--font-display);
+  background: var(--line-soft);
+  color: var(--sub);
+}
+.fc-tier-badge.tier-1 { background: var(--ok-light); color: #2e7d52; }
+.fc-tier-badge.tier-2 { background: var(--accent-light); color: var(--accent); }
+.fc-tier-badge.tier-3 { background: var(--gold-soft); color: var(--gold-deep); }
 
 /* ---- 定着度(忘却曲線) ---- */
 .retention-bar {
